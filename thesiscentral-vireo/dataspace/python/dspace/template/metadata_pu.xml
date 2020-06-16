@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8" standalone="no"?>
+<dublin_core schema="pu">
+  <dcvalue element="date" qualifier="classyear" language="en_US">2017</dcvalue>
+  <dcvalue element="department" qualifier="none" language="en_US">Mathematics</dcvalue>
+  <dcvalue element="pdf" qualifier="coverpage">SeniorThesisCoverPage</dcvalue>
+  <dcvalue element="contributorid" qualifier="none">510101420</dcvalue>
+  <dcvalue element="contributor" qualifier="authorid">960843676</dcvalue>
+  <dcvalue element="contributor" qualifier="advisorid">010004635</dcvalue>
+  <dcvalue element="certificate" qualifier="none" language="en_US">Applications&#x20;of&#x20;Computing&#x20;Program</dcvalue>
+</dublin_core>
