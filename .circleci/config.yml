@@ -55,6 +55,37 @@ jobs:
           paths:
             - ~/.local/share/virtualenvs/venv
 
+  doc:
+    parameters:
+      python_version:
+        type: string
+        default: '3.8.3'
+    working_directory: ~/dspace-python
+    docker:
+      - image: circleci/python:<< parameters.python_version >>-node-browsers-legacy
+    steps:
+      - checkout
+      - restore_cache:
+          name: Restore the cache
+          keys:
+            - pip-packages-<< parameters.python_version >>-{{ .Branch }}-{{ checksum "Pipfile.lock" }}
+      - run:
+          name: 'Install package dependencies using pipenv'
+          command: |
+            sudo pip install pipenv
+            pipenv lock --pre
+            pipenv install
+      - run:
+          name: 'Generate the code documentation'
+          command: |
+            pipenv run sphinx-build -b html source build/html
+      - save_cache:
+          key: pip-packages-<< parameters.python_version >>-{{ .Branch }}-{{ checksum "Pipfile.lock" }}
+          paths:
+            - ~/.local/share/virtualenvs/venv
+      - store_artifacts:
+          path: ~/dspace-python/build/html
+
   test:
     parameters:
       python_version:
@@ -85,13 +116,18 @@ jobs:
             - ~/.local/share/virtualenvs/venv
 
 workflows:
-  build_lint_test:
+  build_lint_doc_test:
     jobs:
       - build:
           name: build-python3.8
           python_version: '3.8.3'
       - lint:
           name: lint-python3.8
+          python_version: '3.8.3'
+          requires:
+            - build-python3.8
+      - doc:
+          name: doc-python3.8
           python_version: '3.8.3'
           requires:
             - build-python3.8

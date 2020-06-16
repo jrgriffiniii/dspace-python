@@ -1,4 +1,3 @@
-
 import logging
 import openpyxl
 from  openpyxl import Workbook
@@ -21,6 +20,20 @@ def snippet():
 
 
 class VireoSheet:
+    """
+    An Excel Spreadsheet encoding information for student thesis submissions.
+
+    Attributes
+    ----------
+    file_name : string
+        The name of the Excel spreadsheet file.
+
+    Methods
+    -------
+    col_names()
+        Retrieve all of the names of the spreadsheet columns.
+    """
+
     CERTIFICATE_PROGRAM = 'Certificate Program'
     STUDENT_NAME = 'Student name'
     STUDENT_ID = 'Student ID'
