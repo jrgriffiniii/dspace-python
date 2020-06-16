@@ -83,6 +83,8 @@ jobs:
           key: pip-packages-<< parameters.python_version >>-{{ .Branch }}-{{ checksum "Pipfile.lock" }}
           paths:
             - ~/.local/share/virtualenvs/venv
+      - store_artifacts:
+          path: ~/dspace-python/build/html
 
   test:
     parameters:
