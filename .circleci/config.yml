@@ -78,7 +78,7 @@ jobs:
       - run:
           name: 'Generate the code documentation'
           command: |
-            pipenv run sphinx-build -b html docs build/docs
+            pipenv run sphinx-build -b html source build/html
       - save_cache:
           key: pip-packages-<< parameters.python_version >>-{{ .Branch }}-{{ checksum "Pipfile.lock" }}
           paths:
