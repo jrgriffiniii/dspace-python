@@ -18,8 +18,8 @@
 # -- Project information -----------------------------------------------------
 
 project = 'dspace-python'
-copyright = '2020, jrgriffiniii'
-author = 'jrgriffiniii'
+copyright = '2020, Princeton University Library'
+author = 'Princeton University Library'
 
 
 # -- General configuration ---------------------------------------------------
