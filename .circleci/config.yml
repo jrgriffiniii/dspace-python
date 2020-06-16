@@ -19,6 +19,7 @@ jobs:
           name: 'Install package dependencies using pipenv'
           command: |
             sudo pip install pipenv
+            pipenv lock --pre
             pipenv install
       - save_cache:
           key: pip-packages-<< parameters.python_version >>-{{ .Branch }}-{{ checksum "Pipfile.lock" }}
@@ -43,6 +44,7 @@ jobs:
           name: 'Install package dependencies using pipenv'
           command: |
             sudo pip install pipenv
+            pipenv lock --pre
             pipenv install
       - run:
           name: 'Lint the Python source files'
@@ -71,6 +73,7 @@ jobs:
           name: 'Install package dependencies using pipenv'
           command: |
             sudo pip install pipenv
+            pipenv lock --pre
             pipenv install
       - run:
           name: 'Run the Python unit and module tests'
