@@ -1,6 +1,6 @@
 # DSpace Python
 
-[![CircleCI](https://circleci.com/gh/jrgriffiniii/dspace-python.svg?style=svg)](https://circleci.com/gh/jrgriffiniii/dspace-python)
+[![CircleCI](https://circleci.com/gh/pulibrary/dspace-python.svg?style=svg)](https://circleci.com/gh/pulibrary/dspace-python)
 
 Python scripts for DSpace administration.
 
