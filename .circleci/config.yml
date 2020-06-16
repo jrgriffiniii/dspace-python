@@ -85,11 +85,15 @@ workflows:
   build_lint_test:
     jobs:
       - build:
-          name: python3.8
+          name: build-python3.8
           python_version: '3.8.3'
       - lint:
-          name: python3.8
+          name: lint-python3.8
           python_version: '3.8.3'
+          requires:
+            - build-python3.8
       - test:
-          name: python3.8
+          name: test-python3.8
           python_version: '3.8.3'
+          requires:
+            - lint-python3.8
