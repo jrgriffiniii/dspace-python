@@ -9,6 +9,7 @@ verify_ssl = true
 lxml = "*"
 openpyxl = "*"
 black = "*"
+sphinx = "*"
 
 [requires]
 python_version = "3.8"
