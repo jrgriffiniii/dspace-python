@@ -1,23 +1,7 @@
 import logging
 import openpyxl
-from  openpyxl import Workbook
-
-if (False):
-    import importlib
-    importlib.reload(vireo); v = vireo.VireoSheet.createFromExcelFile('Restrictions.xlsx'); vc = vireo.createWithAddedColumn('test', v, 'ID')
-    importlib.reload(vireo); v = vireo.VireoSheet.createFromExcelFile('Restrictions.xlsx'); v.save("R")
-
-def snippet():
-    logging.getLogger().setLevel('INFO')
-    # code snippet when in case you want to test in interactive python
-    wb = openpyxl.load_workbook(filename = 'Thesis.xlsx')
-    sheet = wb.worksheets[0]
-    v = VireoSheet('Thesis.xlsx')
-    v.log_info()
-    certs = v.readMoreCerts('AdditionalPrograms.xlsx')
-    certs.log_info()
-    return certs
-
+from openpyxl import Workbook
+import pandas as pd
 
 class VireoSheet:
     """
@@ -49,7 +33,7 @@ class VireoSheet:
     TITLE = 'Title'
     ID = 'ID'
 
-    #RESTRICTIONS SHEET
+    # RESTRICTIONS SHEET
     R_STUDENT_NAME = 'Submitted By'
     R_TITLE = 'Name'
     R_WALK_IN = 'Walk In Access'
@@ -58,10 +42,15 @@ class VireoSheet:
     def __init__(self, workbook, name, unique_ids=True):
         self.file_name = name
         self.unique_ids = unique_ids
+
         if (workbook):
+            # This is only referenced for the workbook and to save the spreadsheet
             self._thesis_wb = workbook
+
             if (1 != len(self._thesis_wb.worksheets)) :
                 raise Exception("%s should have exactly one sheet" % (self.file_name))
+
+            # This is what is directly modified in the Excel Spreadsheet
             self._sheet = self._thesis_wb.worksheets[0]
             self.id_col = self.col_index_of(VireoSheet.ID, required=True)
             self.id_rows = self._derive_id_hash()
@@ -72,11 +61,19 @@ class VireoSheet:
     @staticmethod
     def createFromExcelFile(file_name, unique_ids=True):
         """
-        read from execl file
-        create VireoSHeet from Workbook
+        Factory method for constructing VireoSheet objects from Excel spreadsheet workbook
 
-        :param file_name:   excel file
-        :return VireoSHeet
+        Parameters
+        ----------
+        file_name : string
+            The file system path to the Excel spreadsheet
+        unique_ids : bool
+            Whether or not to enforce unique IDs in the spreadsheet rows
+
+        Returns
+        -------
+        VireoSheet
+            The newly-constructed VireoSheet from the Excel spreadsheet
         """
         if (file_name):
             thesis_wb = openpyxl.load_workbook(filename = file_name)
@@ -119,7 +116,7 @@ class VireoSheet:
         :param row: a row from the spreadsheet
         :return: list of strings
         """
-        return [str(cell.value).strip() for cell in row]
+        return [unicode(cell.value).strip() for cell in row]
 
     def matchingRows(self, col_name, value):
         """
@@ -128,7 +125,6 @@ class VireoSheet:
         :param col_name: unique column name
         :param value: value to match on
         :return: list of rows that have value in the colum headed by col_name
-
         """
         matches = []
         col_idx = self.col_index_of(col_name)
@@ -140,22 +136,83 @@ class VireoSheet:
         return matches
 
     def save(self, file_name):
+        # Use pandas to save the data set
+        dataset = {}
+        columns = [
+            'Name',
+            'Submitted By',
+            'Created',
+            'Class Year',
+            'Department',
+            'Adviser',
+            'Embargo Years',
+            'Walk In Access',
+            'Initial Review',
+            'Adviser Comments Status',
+            'Adviser Comments',
+            'ODOCReview',
+            'Confirmation Sent',
+            'Approval Notification Sent',
+            'Mudd Status',
+            'Request Type',
+            'Notify Faculty Adviser',
+            'Thesis Uploaded',
+            'Check Thesis Uploaded',
+            'SetFormLink',
+            'Item Type',
+            'Path'
+        ]
+
+        for col in columns:
+            dataset[col] = []
+
+        row_index = 0
+        for row in self._sheet.iter_rows(min_row=2):
+            keys = dataset.keys()
+            cell_index = 0
+
+            for cell in row:
+                try:
+                    column = columns[cell_index - 1]
+
+                    # @todo investigate why this is breaking pandas
+                    if cell_index == 22:
+                        continue
+
+                    dataset[column].append(cell.value)
+                    cell_index += 1
+                except Exception as inst:
+                    import pdb; pdb.set_trace()
+                    pass
+
+            row_index += 1
+
+        data_frame = pd.DataFrame(dataset)
         logging.info("SAVING to: " + file_name)
+
         self._thesis_wb.save(file_name)
 
     def _derive_id_hash(self):
         id_rows = {}
+
         for row in self._sheet.iter_rows(min_row=2):
-            if not row[self.id_col].value:
-                logging.warning("%s: Row has no ID value: %s" % (self.file_name, str.join(',',(str(cell.value).strip() for cell in row))))
-            else:
-                id = int(row[self.id_col].value)
-                if not id in id_rows:
-                    id_rows[id] = [row]
-                elif self.unique_ids:
-                    raise Exception("%s has duplicate id %s" % (self.file_name, str(id)))
+            try:
+                cell = row[self.id_col]
+                if not cell.value:
+                    first_field = str(row[0].value.encode('utf-8'))
+                    logging.warning("%s: Row has no ID value: %s" % (self.file_name, first_field))
                 else:
-                    id_rows[id].append(row)
+                    row_id = int(row[self.id_col].value)
+                    if not row_id in id_rows:
+                        id_rows[row_id] = [row]
+                    elif self.unique_ids:
+                        raise Exception("%s has duplicate id %s" % (self.file_name, str(row_id)))
+                    else:
+                        id_rows[row_id].append(row)
+            except Exception as inst:
+                import pdb; pdb.set_trace()
+                pass
+
         return id_rows
 
     def readMoreCerts(self, add_certs_file, check_id=True):
@@ -184,13 +241,31 @@ class VireoSheet:
         return add_certs
 
     def readRestrictions(self, restriction_file, check_id=True):
+        """
+        Parses the restrictions Excel spreadsheet provided by Department of the Registrar
+
+        Parameters
+        ----------
+        restriction_file : string
+            The path to the Excel restriction file
+
+        check_id : bool
+            Whether or not to check for restriction IDs which are not in the submission IDs
+
+        Returns
+        -------
+        VireoSheet
+            The VireoSheet object constructed from the parsed Excel Spreadsheet
+
+        """
+
         restrictions = VireoSheet.createFromExcelFile(restriction_file, unique_ids=False)
         # check that necessary columns are present
         restrictions.col_index_of(VireoSheet.R_STUDENT_NAME, required=True)
         restrictions.col_index_of(VireoSheet.R_TITLE, required=True)
         restrictions.col_index_of(VireoSheet.R_WALK_IN, required=True)
         restrictions.col_index_of(VireoSheet.R_EMBARGO, required=True)
-        # check wheter restriction IDs make sense
+        # check whether restriction IDs make sense
         # look through whether certs file info matches thesis sheet info
         if (check_id):
             for restr_id in restrictions.id_rows:
@@ -204,6 +279,7 @@ class VireoSheet:
         for col in [VireoSheet.STUDENT_EMAIL, VireoSheet.CERTIFICATE_PROGRAM]:
             logging.info("%s column: %s (%s)" % (self.file_name, col, str(self.col_index_of(col))))
         logging.info("---")
+
     def __str__(self):
         return "%s: ID%s-col:%d, nrows:%d" % (self.file_name, ('(unique)' if self.unique_ids else ''), self.id_col, len(self.id_rows))
 
@@ -219,12 +295,15 @@ def createWithAddedColumn(file_name, col_name, unique_ids=True):
     """
 
     from_wb = openpyxl.load_workbook(filename = file_name)
+
     if (1 != len(from_wb.worksheets)) :
         raise Exception("%s should have exactly one sheet" % (file_name))
+
     new_name = "%s_+_%s-column"  % (file_name, col_name)
     wb = Workbook(new_name)
     wb_sheet = wb.create_sheet("MainSheet")
     for row in from_wb.worksheets[0]:
         tpl = row + (None, )
         wb_sheet.append(tpl)
+
     return VireoSheet(wb, new_name, unique_ids)

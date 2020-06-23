@@ -10,18 +10,6 @@ try:
 except Exception:
     from .vireo import VireoSheet
 
-def snippet():
-    logging.getLogger().setLevel('INFO')
-    # code snippet when in case you want to test in interactive python
-    wb = openpyxl.load_workbook(filename = 'Thesis.xlsx')
-    sheet = wb.worksheets[0]
-    v = VireoSheet.createFromExcelFile('Thesis.xlsx')
-    v.log_info()
-    certs = v.readMoreCerts('AdditionalPrograms.xlsx')
-    certs.log_info()
-    return certs
-
-
 class ArgParser(argparse.ArgumentParser):
     @staticmethod
     def create():
