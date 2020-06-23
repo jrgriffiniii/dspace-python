@@ -1,0 +1,31 @@
+#!/bin/tcsh -e
+
+set department_dir = "export/$department"
+set escaped=`echo $department | sed 's/\(&\)/\\\1/g'`
+set escaped=`echo $escaped | sed 's/\( \)/\\\1/g'`
+set escaped_dir = "export/$escaped"
+
+set restrictions = RestrictionsWithId.xlsx
+set certs =  AdditionalPrograms.xlsx
+echo "Restrictions:             export/$restrictions"
+echo "Additional Cert Programs: export/$certs"
+
+/usr/bin/env pipenv run python enhanceAips.py --thesis "$escaped_dir/ExcelExport.xlsx" -r "$escaped_dir/$restrictions" --cover_page export/SeniorThesisCoverPage.pdf --add_certs "$escaped_dir/$certs" --aips "$escaped_dir" -l INFO
+
+/usr/bin/env pipenv run python sortByStatus.py  --thesis "$department_dir/ExcelExport.xlsx" --aips "$department_dir"
+
+cd "export/$department"
+rm "$department.tgz"
+
+tar \
+  --create \
+  --file="$department.tgz" \
+  --gzip \
+  --verbose \
+  --exclude=DSpaceSimpleArchive/ \
+  --exclude=DSpaceSimpleArchive.zip \
+  --exclude="$department.tgz" \
+  .
+
+cd -
+

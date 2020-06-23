@@ -1,0 +1,55 @@
+#!/bin/tcsh -e
+set SUBMITTER_EMAIL = dspace-admin@princeton.edu
+set THESIS_CENTRAL_DOC_ROOT = /dspace/www/thesis_central
+
+# u+rwx g+rx o+r
+umask 003
+
+set dept = "$department"
+echo $dept
+
+set escaped=`echo $department | sed 's/\(&\)/\\\1/g'`
+set escaped=`echo $escaped | sed 's/\( \)/\\\1/g'`
+
+set dept_www = "$THESIS_CENTRAL_DOC_ROOT/$department"
+echo $dept_www
+
+cd "$dept_www"
+echo "cd " `pwd`
+
+set dir = "$THESIS_CENTRAL_DOC_ROOT/$dept/tc_export/DSpaceSimpleArchive"
+set name = "$dept"
+echo $name
+
+echo -n "enter collection handle (format: 88435/dsp01xxxxxxxxx) > "
+set hdl = $<
+
+set timestamp = `date +%s`
+set trace = import-trace-$timestamp.txt
+set map = import-map-$timestamp.txt
+
+echo /dspace/bin/dspace import --add --collection $hdl --eperson $SUBMITTER_EMAIL --mapfile $map --source "$dir" --workflow ">" $trace
+echo  -n "Import now ? [Y/N] "
+if ("Y" == $< ) then
+  /dspace/bin/dspace import --add --collection $hdl --eperson $SUBMITTER_EMAIL --mapfile $map --source "$dir" --workflow ">" $trace
+  echo "--"
+  echo "Trace: $dept_www/$trace"
+  echo "Id-Map: $dept_www/$map"
+  echo ""
+endif
+
+set imported = `wc -l "$dept_www/$map"`
+
+echo  "Sending summary to  $SUBMITTER_EMAIL"
+
+(echo "Department: $dept"; \
+ echo "#Imported Submissions: $imported"; \
+ echo ""; \
+ echo "see details at https://dataspace.princeton.edu/www/thesis_central/$dept"; \
+ echo ""; \
+ echo "List of imported submission packages: "; \
+ echo "submission_ID    DSpace-ID"; \
+ cat "$dept_www/$map";) | mutt -s "TC Import $dept " -- $SUBMITTER_EMAIL
+
+exit 0
+
