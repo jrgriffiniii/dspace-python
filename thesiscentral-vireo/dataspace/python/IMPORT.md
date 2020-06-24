@@ -5,12 +5,49 @@ Thesis Central submissions are organized by academic departments.
 
 ## Preparing a local environment
 
-```bash
-git clone https://github.com/pulibrary/dspace-python
-pyenv 2.7.5
-pipenv shell
-cd thesiscentral-vireo/dataspace/python
+### Installing `pipenv`
+
 ```
+# For Python 3.x support:
+pyenv local 3.8.3
+
+# Or, for legacy support:
+pyenv local 2.7.18
+
+pip install pipenv
+```
+
+### Installing the Python package dependencies
+
+#### 3.8.3
+
+```
+pipenv --python 2.7.18 shell
+pipenv lock --pre
+pipenv install
+```
+
+#### 2.7.18
+
+```
+cp Pipfile.legacy Pipfile
+cp Pipfile.legacy.lock Pipfile
+pipenv --python 2.7.18 shell
+pipenv lock --pre
+pipenv install
+```
+
+### Tunneling over SSH
+
+In order to execute these scripts, one must first tunnel over SSH for copying
+files using `scp`:
+
+```bash
+ssh -L 1234:dataspace.princeton.edu:22 $USER@epoxy.princeton.edu
+```
+
+...where `$USER` is an OIT service account used to access the production or QA
+server environments for DSpace.
 
 ## Exporting from Thesis Central
 Users must export Excel Spreadsheet after selecting a department from [Thesis Central](thesis-central.princeton.edu).
@@ -64,7 +101,19 @@ Please note that this assumes that you have downloaded the Thesis Central
 departmental Excel Spreadsheet into `~/Download/thesis_central_export.xlsx`, and
 the departmental DSpace Simple Archive into `~/Download/dspace_simple_archive.zip`.
 
+### bash
+
 ```bash
+export department="English"
+mkdir export/$department
+cp ~/Download/thesis_central_export.xlsx export/$department/ExcelExport.xlsx
+cp ~/Download/dspace_simple_archive.zip export/$department/
+pipenv run prepare-to-dataspace export/$department
+```
+
+### tcsh
+
+```tcsh
 set department="English"
 mkdir export/$department
 cp ~/Download/thesis_central_export.xlsx export/$department/ExcelExport.xlsx
@@ -87,9 +136,8 @@ check_after_combine
 ```bash
 export department="Multi-Author"
 (cd export; tar cfz $department.tgz ./$department)
-ssh -L 1234:dataspace.princeton.edu:22 libvijrg@epoxy.princeton.edu
-scp -P 1234 export/$department.tgz libvijrg@dataspace.princeton.edu:/var/scratch/thesis-central/$department.tgz
-ssh libvijrg@dataspace.princeton.edu chmod o+r /var/scratch/thesis-central/$department.tgz
+scp -P 1234 export/$department.tgz $USER@dataspace.princeton.edu:/var/scratch/thesis-central/$department.tgz
+ssh $USER@dataspace.princeton.edu chmod o+r /var/scratch/thesis-central/$department.tgz
 ```
 
 ## Import to DataSpace
@@ -97,7 +145,7 @@ ssh libvijrg@dataspace.princeton.edu chmod o+r /var/scratch/thesis-central/$depa
 From the DataSpace server environment, please invoke the following:
 
 ```bash
-ssh -J libvijrg@epoxy.princeton.edu libvijrg@dataspace.princeton.edu
+ssh -J $USER@epoxy.princeton.edu $USER@dataspace.princeton.edu
 su - root
 su - dspace
 cd ~/thesiscentral-vireo/dataspace/import
