@@ -133,8 +133,19 @@ check_after_combine
 
 #### Transfer the SIPs to the server
 
+##### bash
+
 ```bash
 export department="Multi-Author"
+(cd export; tar cfz $department.tgz ./$department)
+scp -P 1234 export/$department.tgz $USER@dataspace.princeton.edu:/var/scratch/thesis-central/$department.tgz
+ssh $USER@dataspace.princeton.edu chmod o+r /var/scratch/thesis-central/$department.tgz
+```
+
+##### tcsh
+
+```tcsh
+set department="Multi-Author"
 (cd export; tar cfz $department.tgz ./$department)
 scp -P 1234 export/$department.tgz $USER@dataspace.princeton.edu:/var/scratch/thesis-central/$department.tgz
 ssh $USER@dataspace.princeton.edu chmod o+r /var/scratch/thesis-central/$department.tgz
@@ -144,11 +155,13 @@ ssh $USER@dataspace.princeton.edu chmod o+r /var/scratch/thesis-central/$departm
 
 From the DataSpace server environment, please invoke the following:
 
-```bash
+### tcsh
+
+```tcsh
 ssh -J $USER@epoxy.princeton.edu $USER@dataspace.princeton.edu
 su - root
 su - dspace
-cd ~/thesiscentral-vireo/dataspace/import
+cd ~thesiscentral-vireo/dataspace/import
 ./unwrap
 
 # Just cut and paste the derived .tgz file from the prompt
