@@ -39,7 +39,7 @@ pipenv install
 
 ```
 cp Pipfile.legacy Pipfile
-cp Pipfile.legacy.lock Pipfile
+cp Pipfile.lock.legacy Pipfile.lock
 pipenv --python 2.7.18 shell
 pipenv lock --pre
 pipenv install
