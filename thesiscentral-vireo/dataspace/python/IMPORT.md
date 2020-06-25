@@ -117,7 +117,7 @@ departmental Excel Spreadsheet into `~/Download/thesis_central_export.xlsx`, and
 the departmental DSpace Simple Archive into `~/Download/dspace_simple_archive.zip`.
 
 ```bash
-tcsh
+/bin/tcsh
 set department="English"
 mkdir export/$department
 cp ~/Download/thesis_central_export.xlsx export/$department/ExcelExport.xlsx
@@ -126,12 +126,14 @@ cd export/$department
 unzip dspace_simple_archive.zip
 cd -
 source prepare-to-dataspace export/$department
+scp -P 1234 $department.tgz $user@localhost:/var/scratch/thesis-central/$department.tgz
+ssh -J $user@epoxy.princeton.edu $user@$host chmod o+r /var/scratch/thesis-central/$department.tgz
 ```
 
 ### Multi-Author Submissions
 
 ```bash
-tcsh
+/bin/tcsh
 cd export/Multi-Author
 check_all_approved
 
@@ -142,11 +144,11 @@ check_after_combine
 #### Transfer the SIPs to the server
 
 ```bash
-tcsh
+/bin/tcsh
 set department="Multi-Author"
 (cd export; tar cfz $department.tgz ./$department)
-scp -P 1234 export/$department.tgz $USER@dataspace.princeton.edu:/var/scratch/thesis-central/$department.tgz
-ssh $USER@dataspace.princeton.edu chmod o+r /var/scratch/thesis-central/$department.tgz
+scp -P 1234 $department.tgz $user@localhost:/var/scratch/thesis-central/$department.tgz
+ssh -J $user@epoxy.princeton.edu $user@$host /usr/bin/chmod o+r /var/scratch/thesis-central/$department.tgz
 ```
 
 ## Import to DataSpace
@@ -154,8 +156,8 @@ ssh $USER@dataspace.princeton.edu chmod o+r /var/scratch/thesis-central/$departm
 From the DataSpace server environment, please invoke the following:
 
 ```bash
-tcsh
-ssh -J $USER@epoxy.princeton.edu $USER@dataspace.princeton.edu
+/bin/tcsh
+ssh -J $user@epoxy.princeton.edu $user@$host
 su - root
 su - dspace
 cd ~thesiscentral-vireo/dataspace/import

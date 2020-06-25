@@ -13,21 +13,23 @@ set host = $3
 
 cd `dirname $0`
 pwd
-/bin/cp export/$certs export/$restrictions $department_dir
 (/usr/bin/env python enhanceAips.py --thesis $department_dir/ExcelExport*.xlsx -r $department_dir/$restrictions --cover_page export/SeniorThesisCoverPage.pdf --add_certs $department_dir/$certs --aips $department_dir  -l INFO  > $department_dir/$department.tsv ) |& tee  $department_dir/enhancedAips.trace
 /usr/bin/env python sortByStatus.py  --thesis $department_dir/ExcelExport*.xlsx --aips $department_dir
+
 foreach f ($department_dir/Approved $department_dir/Cancelled $department_dir/Submitted $department_dir/Not-Submitted $department_dir/Under-Review)
   if (-e $f) then
     echo -n "$f :"
     ls -d $f/*/submission* | wc -l
   endif
 end
+
 if -e $department_dir/Multi-Author then
   echo "*** this batch contains multi authors thesis, see $department_dir/Multi-Author "
 endif
+
 echo ""
 
-echo "tarring file ..."
+echo "Tarring file ..."
 (cd export; tar cfz $department.tgz ./$department)
 
 echo scp export/$department.tgz $user@$host:/var/scratch/thesis-central:$department.tgz
