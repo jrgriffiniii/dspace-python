@@ -152,6 +152,7 @@ workflows:
           python_version: '3.8.3'
           requires:
             - lint-python3.8
+
       - build:
           name: build-python2.7
           python_version: '2.7.18'
@@ -170,3 +171,23 @@ workflows:
           python_version: '2.7.18'
           requires:
             - lint-python2.7
+
+      - build:
+          name: build-python2.7.5
+          python_version: '2.7.5'
+      - lint:
+          name: lint-python2.7.5
+          python_version: '2.7.5'
+          requires:
+            - build-python2.7.5
+      - doc:
+          name: doc-python2.7.5
+          python_version: '2.7.5'
+          requires:
+            - build-python2.7.5
+      - test:
+          name: test-python2.7.5
+          python_version: '2.7.5'
+          requires:
+            - lint-python2.7.5
+
