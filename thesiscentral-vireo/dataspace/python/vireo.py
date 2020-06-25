@@ -2,21 +2,26 @@ import logging
 import openpyxl
 from  openpyxl import Workbook
 
-if (False):
-    import importlib
-    importlib.reload(vireo); v = vireo.VireoSheet.createFromExcelFile('Restrictions.xlsx'); vc = vireo.createWithAddedColumn('test', v, 'ID')
-    importlib.reload(vireo); v = vireo.VireoSheet.createFromExcelFile('Restrictions.xlsx'); v.save("R")
+# if (False):
+#     import importlib
+#     importlib.reload(vireo)
+#     v = vireo.VireoSheet.createFromExcelFile('Restrictions.xlsx')
+#     vc = vireo.createWithAddedColumn('test', v, 'ID')
+    
+#     importlib.reload(vireo)
+#     v = vireo.VireoSheet.createFromExcelFile('Restrictions.xlsx')
+#     v.save("R")
 
-def snippet():
-    logging.getLogger().setLevel('INFO')
-    # code snippet when in case you want to test in interactive python
-    wb = openpyxl.load_workbook(filename = 'Thesis.xlsx')
-    sheet = wb.worksheets[0]
-    v = VireoSheet('Thesis.xlsx')
-    v.log_info()
-    certs = v.readMoreCerts('AdditionalPrograms.xlsx')
-    certs.log_info()
-    return certs
+# def snippet():
+#     logging.getLogger().setLevel('INFO')
+#     # code snippet when in case you want to test in interactive python
+#     wb = openpyxl.load_workbook(filename = 'Thesis.xlsx')
+#     sheet = wb.worksheets[0]
+#     v = VireoSheet('Thesis.xlsx')
+#     v.log_info()
+#     certs = v.readMoreCerts('AdditionalPrograms.xlsx')
+#     certs.log_info()
+#     return certs
 
 
 class VireoSheet:
@@ -60,8 +65,10 @@ class VireoSheet:
         self.unique_ids = unique_ids
         if (workbook):
             self._thesis_wb = workbook
-            if (1 != len(self._thesis_wb.worksheets)) :
-                raise Exception("%s should have exactly one sheet" % (self.file_name))
+            if 1 != len(self._thesis_wb.worksheets):
+                raise Exception(
+                    "%s should have exactly one sheet" % (self.file_name)
+                )
             self._sheet = self._thesis_wb.worksheets[0]
             self.id_col = self.col_index_of(VireoSheet.ID, required=True)
             self.id_rows = self._derive_id_hash()
@@ -105,8 +112,12 @@ class VireoSheet:
         try:
             return self.col_names().index(col_header)
         except ValueError as e:
-            if (required):
-                raise Exception("%s does not contain a '%s' column" % (self.file_name, col_header))
+            if required:
+                raise Exception(
+                    "%s does not contain a '%s' column" % (
+                        self.file_name, col_header
+                    )
+                )
         return None;
 
     def iter_rows(self):
@@ -147,44 +158,80 @@ class VireoSheet:
         id_rows = {}
         for row in self._sheet.iter_rows(min_row=2):
             if not row[self.id_col].value:
-                logging.warning("%s: Row has no ID value: %s" % (self.file_name, str.join(',',(str(cell.value).strip() for cell in row))))
+                logging.warning(
+                    "%s: Row has no ID value: %s" % (
+                        self.file_name, str.join(',',(
+                            str(cell.value).strip() for cell in row)
+                        )
+                    )
+                )
             else:
                 id = int(row[self.id_col].value)
                 if not id in id_rows:
                     id_rows[id] = [row]
                 elif self.unique_ids:
-                    raise Exception("%s has duplicate id %s" % (self.file_name, str(id)))
+                    raise Exception(
+                        "%s has duplicate id %s" % (self.file_name, str(id))
+                    )
                 else:
                     id_rows[id].append(row)
         return id_rows
 
     def readMoreCerts(self, add_certs_file, check_id=True):
         logging.info("readMoreCerts")
-        add_certs = VireoSheet.createFromExcelFile(add_certs_file, unique_ids=False)
+        add_certs = VireoSheet.createFromExcelFile(
+            add_certs_file, unique_ids=False
+        )
         # check that required columns are present
-        certs_email_col_id = add_certs.col_index_of(VireoSheet.STUDENT_EMAIL, required=True)
-        certs_cert_col_id = add_certs.col_index_of(VireoSheet.CERTIFICATE_PROGRAM, required=True)
-        thesis_email_col_id = self.col_index_of(VireoSheet.STUDENT_EMAIL, required=True)
+        certs_email_col_id = add_certs.col_index_of(
+            VireoSheet.STUDENT_EMAIL, required=True
+        )
+        certs_cert_col_id = add_certs.col_index_of(
+            VireoSheet.CERTIFICATE_PROGRAM, required=True
+        )
+        thesis_email_col_id = self.col_index_of(
+            VireoSheet.STUDENT_EMAIL, required=True
+        )
         # look through whether certs file info matches thesis sheet info
         for cert_id in add_certs.id_rows:
             if  not  cert_id in  self.id_rows:
-                if (check_id):
-                    raise Exception("%s, row with ID %d: there is no such row in %s" % (add_certs.file_name, cert_id, self.file_name))
+                if check_id:
+                    raise Exception(
+                        "%s, row with ID %d: there is no such row in %s" % (
+                            add_certs.file_name, cert_id, self.file_name
+                        )
+                    )
                 else:
                     continue
             thesis_row = self.id_rows[cert_id][0]
             for row in  add_certs.id_rows[cert_id]:
-                logging.debug("ID %d -> cert_row: %s" % (cert_id, VireoSheet.row_values(row)))
+                logging.debug(
+                    "ID %d -> cert_row: %s" % (
+                        cert_id, VireoSheet.row_values(row)
+                    )
+                )
                 # check that student email matches
-                if (row[certs_email_col_id].value.strip() != thesis_row[thesis_email_col_id].value.strip()):
-                    raise Exception("%s, row with ID %d: email mistmatch with same row in %s" % (add_certs.file_name, cert_id, self.file_name))
+                email1 = row[certs_email_col_id].value.strip()
+                email2 = thesis_row[thesis_email_col_id].value.strip()
+                if email1 != email2:
+                    raise Exception(
+                        "%s, row with ID %d: email mistmatch with same row in %s" % (
+                            add_certs.file_name, cert_id, self.file_name
+                        )
+                    )
                 # check that certificate program enry is not empty
                 if not row[certs_cert_col_id].value:
-                    raise Exception("%s, row with ID %d: row has empty certificate value" % (add_certs.file_name, cert_id))
+                    raise Exception(
+                        "%s, row with ID %d: row has empty certificate value" % (
+                            add_certs.file_name, cert_id
+                        )
+                    )
         return add_certs
 
     def readRestrictions(self, restriction_file, check_id=True):
-        restrictions = VireoSheet.createFromExcelFile(restriction_file, unique_ids=False)
+        restrictions = VireoSheet.createFromExcelFile(
+            restriction_file, unique_ids=False
+        )
         # check that necessary columns are present
         restrictions.col_index_of(VireoSheet.R_STUDENT_NAME, required=True)
         restrictions.col_index_of(VireoSheet.R_TITLE, required=True)
@@ -195,12 +242,20 @@ class VireoSheet:
         if (check_id):
             for restr_id in restrictions.id_rows:
                 if  not  restr_id in  self.id_rows:
-                    raise Exception("%s, row with ID %d: there is no such row in %s" % (restrictions.file_name, restr_id, self.file_name))
+                    raise Exception(
+                        "%s, row with ID %d: there is no such row in %s" % (
+                            restrictions.file_name, restr_id, self.file_name
+                        )
+                    )
         return restrictions
 
     def log_info(self):
         logging.info(str(self))
-        logging.info("%s: headers %s" % (self.file_name, str.join(',', self.col_names())))
+        logging.info(
+            "%s: headers %s" % (
+                self.file_name, str.join(',', self.col_names())
+            )
+        )
         for col in [VireoSheet.STUDENT_EMAIL, VireoSheet.CERTIFICATE_PROGRAM]:
             logging.info("%s column: %s (%s)" % (self.file_name, col, str(self.col_index_of(col))))
         logging.info("---")
