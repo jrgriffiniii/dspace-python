@@ -95,35 +95,38 @@ Then, one must add an `ID` column to this exported spreadsheet:
 ![alt text](./docs/thesis-central_screenshot_1.png)
 ![alt text](./docs/thesis-central_screenshot_2.png)
 
+Finally, one must copy the file to the following directory:
+
+```bash
+cp ~/RestrictionsWithId.xlsx export/RestrictionsWithId.xlsx
+```
+
+## Adding the Academic Programs
+
+Academic programs are listed in a spreadsheet located on [Google
+Drive](https://drive.google.com/file/d/1K_rrBPY-Pf3DcqbCS-ZxYFjMQl3bIYEM/view?usp=sharing).
+
+This should please be downloaded to `export/AdditionalPrograms.xlsx`.
+
 ## Building DSpace Submission Information Packages (SIPs)
 
 Please note that this assumes that you have downloaded the Thesis Central 
 departmental Excel Spreadsheet into `~/Download/thesis_central_export.xlsx`, and
 the departmental DSpace Simple Archive into `~/Download/dspace_simple_archive.zip`.
 
-### bash
-
 ```bash
-export department="English"
-mkdir export/$department
-cp ~/Download/thesis_central_export.xlsx export/$department/ExcelExport.xlsx
-cp ~/Download/dspace_simple_archive.zip export/$department/
-pipenv run prepare-to-dataspace export/$department
-```
-
-### tcsh
-
-```tcsh
+tcsh
 set department="English"
 mkdir export/$department
 cp ~/Download/thesis_central_export.xlsx export/$department/ExcelExport.xlsx
 cp ~/Download/dspace_simple_archive.zip export/$department/
-pipenv run prepare-to-dataspace export/$department
+source prepare-to-dataspace export/$department
 ```
 
 ### Multi-Author Submissions
 
 ```bash
+tcsh
 cd export/Multi-Author
 check_all_approved
 
@@ -133,18 +136,8 @@ check_after_combine
 
 #### Transfer the SIPs to the server
 
-##### bash
-
 ```bash
-export department="Multi-Author"
-(cd export; tar cfz $department.tgz ./$department)
-scp -P 1234 export/$department.tgz $USER@dataspace.princeton.edu:/var/scratch/thesis-central/$department.tgz
-ssh $USER@dataspace.princeton.edu chmod o+r /var/scratch/thesis-central/$department.tgz
-```
-
-##### tcsh
-
-```tcsh
+tcsh
 set department="Multi-Author"
 (cd export; tar cfz $department.tgz ./$department)
 scp -P 1234 export/$department.tgz $USER@dataspace.princeton.edu:/var/scratch/thesis-central/$department.tgz
@@ -155,9 +148,8 @@ ssh $USER@dataspace.princeton.edu chmod o+r /var/scratch/thesis-central/$departm
 
 From the DataSpace server environment, please invoke the following:
 
-### tcsh
-
-```tcsh
+```bash
+tcsh
 ssh -J $USER@epoxy.princeton.edu $USER@dataspace.princeton.edu
 su - root
 su - dspace

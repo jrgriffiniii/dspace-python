@@ -45,6 +45,18 @@ pipenv lock --pre
 pipenv install
 ```
 
+#### 2.7.5
+
+```
+brew uninstall --ignore-dependencies openssl@1.1
+CONFIGURE_OPTS="--with-openssl=$(brew --prefix openssl)" LDFLAGS="-L$(brew --prefix openssl)/lib" LD_RUN_PATH="/usr/local/opt/openssl@1.1/lib" CPPFLAGS="-I/usr/local/opt/openssl@1.1/include" CFLAGS="-I/usr/local/opt/openssl@1.1/include" pyenv install 2.7.5
+cp Pipfile.legacy Pipfile
+cp Pipfile.lock.legacy Pipfile.lock
+pipenv --python 2.7.5 shell
+pipenv lock --pre
+pipenv install
+```
+
 ### Usage
 
 - [Thesis Central and Senior Theses Administration](./thesiscentral-vireo/dataspace/python/README.md)
