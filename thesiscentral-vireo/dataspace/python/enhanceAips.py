@@ -1,4 +1,3 @@
-
 from lxml import etree as ET
 
 import argparse
@@ -66,9 +65,9 @@ class EnhanceAips:
         self._confirm_aip_export_dir()
 
     def print_table(self, sep="\t", file=sys.stdout):
-        print(sep.join(self.submissions.col_names() + [VireoSheet.R_EMBARGO, VireoSheet.R_WALK_IN]), file=file)
+        print(sep.join(self.submissions.col_names() + [VireoSheet.R_EMBARGO, VireoSheet.R_WALK_IN]))
         for row in self.submissions_tbl:
-            print(sep.join(str(x) for x in row), file=file)
+            print(sep.join(str(x) for x in row))
 
     def _make_submission_table(self):
         aip_tbl = []
@@ -99,7 +98,7 @@ class EnhanceAips:
         status_idx = self.submissions.col_index_of(VireoSheet.STATUS)
         for row in self.submissions_tbl:
             if (row[status_idx] in EnhanceAips.EXPORT_STATUS):
-                dir = "%s/submission_%d" % (self.aip_dir, row[idx])
+                dir = "%s/DSpaceSimpleArchive/submission_%d" % (self.aip_dir, row[idx])
                 if not os.path.isdir(dir):
                     self._error("AIP dir %s: not a directory" % dir)
                 else:
@@ -247,12 +246,12 @@ class EnhanceAips:
         ET.SubElement(root, 'dcvalue', attrib=attrs).text = str(value)
 
     def _xml_file_name(self, sub_id, name):
-        return "%s/submission_%d/%s.xml" % (self.aip_dir, sub_id, name)
+        return "%s/DSpaceSimpleArchive/submission_%d/%s.xml" % (self.aip_dir, sub_id, name)
 
     def _primary_doc_path(self, sub_id):
-        for line in open("%s/submission_%d/contents" % ( self.aip_dir, sub_id)):
+        for line in open("%s/DSpaceSimpleArchive/submission_%d/contents" % ( self.aip_dir, sub_id)):
             if "primary:true" in line:
-                return "%s/submission_%d/%s" % (self.aip_dir, sub_id, line.split("\t")[0])
+                return "%s/DSpaceSimpleArchive/submission_%d/%s" % (self.aip_dir, sub_id, line.split("\t")[0])
         return None
 
     def _write_xml_file(self, root, file):

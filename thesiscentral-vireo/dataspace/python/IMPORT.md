@@ -95,10 +95,8 @@ Then, one must add an `ID` column to this exported spreadsheet:
 ![alt text](./docs/thesis-central_screenshot_1.png)
 ![alt text](./docs/thesis-central_screenshot_2.png)
 
-Finally, one must copy the file to the following directory:
-
 ```bash
-cp ~/RestrictionsWithId.xlsx export/RestrictionsWithId.xlsx
+/usr/bin/env python restrictionsFindIds.py
 ```
 
 ## Adding the Academic Programs
@@ -106,7 +104,11 @@ cp ~/RestrictionsWithId.xlsx export/RestrictionsWithId.xlsx
 Academic programs are listed in a spreadsheet located on [Google
 Drive](https://drive.google.com/file/d/1K_rrBPY-Pf3DcqbCS-ZxYFjMQl3bIYEM/view?usp=sharing).
 
-This should please be downloaded to `export/AdditionalPrograms.xlsx`.
+This should please be downloaded and copied with the following:
+```
+cp ~/AdditionalPrograms.xlsx export/AdditionalPrograms.xlsx
+cp ~/AdditionalPrograms.xlsx export/$department/AdditionalPrograms.xlsx
+```
 
 ## Building DSpace Submission Information Packages (SIPs)
 
@@ -120,6 +122,9 @@ set department="English"
 mkdir export/$department
 cp ~/Download/thesis_central_export.xlsx export/$department/ExcelExport.xlsx
 cp ~/Download/dspace_simple_archive.zip export/$department/
+cd export/$department
+unzip dspace_simple_archive.zip
+cd -
 source prepare-to-dataspace export/$department
 ```
 
