@@ -140,8 +140,6 @@ source prepare-to-dataspace export/$department
 ```bash
 /bin/tcsh
 set department="English"
-set user=MY_SSH_USER
-set host=updatespace.princeton.edu # Or, for production, dataspace.princeton.edu
 mkdir export/$department
 cp ~/Download/thesis_central_export.xlsx export/$department/ExcelExport.xlsx
 cp ~/Download/dspace_simple_archive.zip export/$department/
@@ -149,6 +147,13 @@ cd export/$department
 unzip dspace_simple_archive.zip
 cd -
 source prepare-to-dataspace export/$department
+```
+
+### Transfer the files to the server
+
+```bash
+set user=MY_SSH_USER
+set host=updatespace.princeton.edu # Or, for production, dataspace.princeton.edu
 scp -P 1234 export/$department.tgz $user@localhost:/var/scratch/thesis-central/$department.tgz
 ssh -J $user@epoxy.princeton.edu $user@$host chmod o+r /var/scratch/thesis-central/$department.tgz
 ```
@@ -192,7 +197,7 @@ procedures:
 ```bash
 unlink /dspace/www/thesis_central/$department/$department.tsv
 unlink /dspace/www/thesis_central/$department/Approved
-rm -r /dspace/www/thesis_central/$department/tc_export/
+rm -rf /dspace/www/thesis_central/$department/tc_export/
 ```
 
 Then please invoke:
