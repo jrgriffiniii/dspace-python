@@ -119,22 +119,29 @@ Please note that this assumes that you have downloaded the Thesis Central
 departmental Excel Spreadsheet into `~/Download/thesis_central_export.xlsx`, and
 the departmental DSpace Simple Archive into `~/Download/dspace_simple_archive.zip`.
 
+### Cleaning the Environment
+
+```bash
+/bin/tcsh
+set department="English"
+source clean-simple-archives
+```
+
 ### Rebuilding SIPs
 
 ```bash
 /bin/tcsh
 set department="English"
-rm -fr ./export/$department/Approved
-rm -fr ./export/$department/DSpaceSimpleArchive
-cd export/$department
-unzip dspace_simple_archive.zip
-cd -
 source prepare-to-dataspace export/$department
 ```
+
+### Building SIPs
 
 ```bash
 /bin/tcsh
 set department="English"
+set user=MY_SSH_USER
+set host=updatespace.princeton.edu # Or, for production, dataspace.princeton.edu
 mkdir export/$department
 cp ~/Download/thesis_central_export.xlsx export/$department/ExcelExport.xlsx
 cp ~/Download/dspace_simple_archive.zip export/$department/

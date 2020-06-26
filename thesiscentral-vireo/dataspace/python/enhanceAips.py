@@ -67,7 +67,7 @@ class EnhanceAips:
     def print_table(self, sep="\t", file=sys.stdout):
         print(sep.join(self.submissions.col_names() + [VireoSheet.R_EMBARGO, VireoSheet.R_WALK_IN]))
         for row in self.submissions_tbl:
-            print(sep.join(str(x) for x in row))
+            print(sep.join(unicode(x) for x in row))
 
     def _make_submission_table(self):
         aip_tbl = []
@@ -76,15 +76,23 @@ class EnhanceAips:
         cp_idx = self.submissions.col_index_of(VireoSheet.CERTIFICATE_PROGRAM)
         multi_idx = self.submissions.col_index_of(VireoSheet.MULTI_AUTHOR)
         for sub_id in self.submissions.id_rows:
-            vals = VireoSheet.row_values(self.submissions.id_rows[sub_id][0])
-            vals[idx] = int(float(vals[idx]))
+            current_rows = self.submissions.id_rows[sub_id]
+            current_row = current_rows[0]
+
+            vals = VireoSheet.row_values(current_row)
+
+            normal_row_values = float(vals[idx])
+            vals[idx] = int(normal_row_values)
             vals[multi_idx] = vals[multi_idx].upper() == "YES"
             #vals[stud_idx] = [ vals[stud_idx] ]
+
             cp = vals[cp_idx]
             vals[cp_idx] =  [cp] if (cp) else []
-            logging.debug("\t".join(str(_) for _ in vals) + "\n")
+            logging.debug("\t".join(unicode(_) for _ in vals) + "\n")
+
             # add two cols at end for walkin and embargo restrictions
             aip_tbl.append(vals + [None, None])
+
         return aip_tbl
 
 
@@ -145,7 +153,7 @@ class EnhanceAips:
                         sub[self.embargo_idx] = 0
                     else:
                         sub[self.embargo_idx] = int(row[embargo_idx].value)
-                    logging.info("ADDING restriction submission with ID %d: walkin %s, embargo %d" %(sub[idx], str(sub[self.walkin_idx]), sub[self.embargo_idx]))
+                    logging.info("ADDING restriction submission with ID %d: walkin %s, embargo %d" %(sub[idx], unicode(sub[self.walkin_idx]), sub[self.embargo_idx]))
 
     def adjust_aips(self):
         idx = self.submissions.col_index_of(VireoSheet.ID)
@@ -164,7 +172,7 @@ class EnhanceAips:
                     else:
                         logging.info("%s unchanged" % f.name)
             except Exception as e:
-                self._error("Exception submission aip: %d: %s" % (sub[idx], str(e)))
+                self._error("Exception submission aip: %d: %s" % (sub[idx], unicode(e)))
                 logging.debug(traceback.format_exc())
 
 
@@ -224,7 +232,7 @@ class EnhanceAips:
             if (root.find('dcvalue[@element="rights"]') is None):
                 self._add_el(root, 'rights.accessRights', EnhanceAips.WALKIN_MSG)
                 changed = True
-        logging.debug(" _adjust_dc_xml: changed=%s" % str(changed))
+        logging.debug(" _adjust_dc_xml: changed=%s" % unicode(changed))
         return changed
 
 
@@ -238,12 +246,12 @@ class EnhanceAips:
         return name
 
     def _add_el(self, root, metadata, value):
-        logging.debug("XML add_el %s=%s" % (metadata, str(value)))
+        logging.debug("XML add_el %s=%s" % (metadata, unicode(value)))
         splits = metadata.split('.')
         attrs = { 'element' : splits[0]}
         if len(splits) > 1:
             attrs['qualifier'] = splits[1]
-        ET.SubElement(root, 'dcvalue', attrib=attrs).text = str(value)
+        ET.SubElement(root, 'dcvalue', attrib=attrs).text = unicode(value)
 
     def _xml_file_name(self, sub_id, name):
         return "%s/DSpaceSimpleArchive/submission_%d/%s.xml" % (self.aip_dir, sub_id, name)
@@ -281,6 +289,7 @@ def main():
         restrictions.log_info()
 
         enhancer = EnhanceAips(submissions, args.aips, args.cover_page)
+
         enhancer.addCertiticates(moreCerts)
         enhancer.addRestrictions(restrictions)
         enhancer.print_table(file=sys.stdout)

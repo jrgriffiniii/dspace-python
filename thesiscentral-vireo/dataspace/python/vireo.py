@@ -119,7 +119,7 @@ class VireoSheet:
         :param row: a row from the spreadsheet
         :return: list of strings
         """
-        return [str(cell.value).strip() for cell in row]
+        return [unicode(cell.value).strip() for cell in row]
 
     def matchingRows(self, col_name, value):
         """
