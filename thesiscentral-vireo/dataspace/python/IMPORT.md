@@ -71,6 +71,9 @@ Please note that one must include the following columns in the export:
 * Approval date
 * Event time
 
+Please note that the `status` value of `Submitted` will not be assumed to be
+`Approved`, hence, these will simply not be handled by the import scripts.
+
 ![alt text](./docs/thesis-central_screenshot_4.png)
 
 One then exports both the `Excel Export (with Document URLs)`:
@@ -116,6 +119,19 @@ Please note that this assumes that you have downloaded the Thesis Central
 departmental Excel Spreadsheet into `~/Download/thesis_central_export.xlsx`, and
 the departmental DSpace Simple Archive into `~/Download/dspace_simple_archive.zip`.
 
+### Rebuilding SIPs
+
+```bash
+/bin/tcsh
+set department="English"
+rm -fr ./export/$department/Approved
+rm -fr ./export/$department/DSpaceSimpleArchive
+cd export/$department
+unzip dspace_simple_archive.zip
+cd -
+source prepare-to-dataspace export/$department
+```
+
 ```bash
 /bin/tcsh
 set department="English"
@@ -126,7 +142,7 @@ cd export/$department
 unzip dspace_simple_archive.zip
 cd -
 source prepare-to-dataspace export/$department
-scp -P 1234 $department.tgz $user@localhost:/var/scratch/thesis-central/$department.tgz
+scp -P 1234 export/$department.tgz $user@localhost:/var/scratch/thesis-central/$department.tgz
 ssh -J $user@epoxy.princeton.edu $user@$host chmod o+r /var/scratch/thesis-central/$department.tgz
 ```
 
@@ -160,7 +176,21 @@ From the DataSpace server environment, please invoke the following:
 ssh -J $user@epoxy.princeton.edu $user@$host
 su - root
 su - dspace
-cd ~thesiscentral-vireo/dataspace/import
+cd ~/thesiscentral-vireo/dataspace/import
+```
+
+One must ensure that the directory used for imports is clean of previous import
+procedures:
+
+```bash
+unlink /dspace/www/thesis_central/$department/$department.tsv
+unlink /dspace/www/thesis_central/$department/Approved
+rm -r /dspace/www/thesis_central/$department/tc_export/
+```
+
+Then please invoke:
+
+```bash
 ./unwrap
 
 # Just cut and paste the derived .tgz file from the prompt

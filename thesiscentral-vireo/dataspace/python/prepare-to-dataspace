@@ -11,12 +11,10 @@ set department = `basename $department_dir`
 set user = $2
 set host = $3
 
-cd `dirname $0`
-pwd
 (/usr/bin/env python enhanceAips.py --thesis $department_dir/ExcelExport*.xlsx -r $department_dir/$restrictions --cover_page export/SeniorThesisCoverPage.pdf --add_certs $department_dir/$certs --aips $department_dir  -l INFO  > $department_dir/$department.tsv ) |& tee  $department_dir/enhancedAips.trace
 /usr/bin/env python sortByStatus.py  --thesis $department_dir/ExcelExport*.xlsx --aips $department_dir
 
-foreach f ($department_dir/Approved $department_dir/Cancelled $department_dir/Submitted $department_dir/Not-Submitted $department_dir/Under-Review)
+foreach f ($department_dir/DSpaceSimpleArchive/Approved $department_dir/DSpaceSimpleArchive/Cancelled $department_dir/DSpaceSimpleArchive/Submitted $department_dir/DSpaceSimpleArchive/Not-Submitted $department_dir/DSpaceSimpleArchive/Under-Review)
   if (-e $f) then
     echo -n "$f :"
     ls -d $f/*/submission* | wc -l
@@ -31,7 +29,3 @@ echo ""
 
 echo "Tarring file ..."
 (cd export; tar cfz $department.tgz ./$department)
-
-echo scp export/$department.tgz $user@$host:/var/scratch/thesis-central:$department.tgz
-scp -P 1234 export/$department.tgz $user@$host:/var/scratch/thesis-central/$department.tgz
-ssh -J $user@epoxy.princeton.edu $user@$host chmod o+r /var/scratch/thesis-central/$department.tgz
