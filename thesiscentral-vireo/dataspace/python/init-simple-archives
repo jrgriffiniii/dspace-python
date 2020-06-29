@@ -1,0 +1,10 @@
+#!/bin/tcsh -e
+mkdir export/"$department"
+set escaped=`echo $department | sed 's/\([ &]\)/\1/g'`
+echo $escaped
+
+cp downloads/ExcelExport.xlsx "export/$escaped/ExcelExport.xlsx"
+cp downloads/DSpaceSimpleArchive.zip "export/$escaped"
+cd export/"$department"
+unzip DSpaceSimpleArchive.zip
+cd -
