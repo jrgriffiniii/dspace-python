@@ -1,7 +1,6 @@
 from lxml import etree as ET
 
 import argparse
-
 import datetime
 import logging
 import traceback
@@ -9,14 +8,12 @@ import os
 import sys
 from shutil import copyfile
 
-
 # for the benefit of IDE import two ways
 try:
     from vireo import VireoSheet
 except Exception:
     from . import vireo
     from vireo import VireoSheet
-
 
 class ArgParser(argparse.ArgumentParser):
     @staticmethod
@@ -42,9 +39,12 @@ enhance pu-metadata.xml in AIPS in submission_<ID> subdirections of export direc
         return parser;
 
     def parse_args(self):
-        args= argparse.ArgumentParser.parse_args(self)
-        if not os.path.isdir(args.aips):
-            raise Exception("%s is not a directory" % args.aips)
+        args = argparse.ArgumentParser.parse_args(self)
+        escaped = args.aips.replace('\\','')
+        args.aips = escaped
+
+        if not os.path.isdir( escaped ):
+            raise Exception("%s is not a directory" % escaped)
         return args
 
 class EnhanceAips:
@@ -194,9 +194,14 @@ class EnhanceAips:
         copy_path = "%s/ORIG-%s" % (os.path.dirname(primary_path), os.path.basename(primary_path))
         if not os.path.isfile(copy_path):
             copyfile(primary_path, copy_path)
-            cmd = EnhanceAips.GLUE_CMD % (primary_path, self.cover_pdf_path, copy_path)
+
+            escaped_copy_path = copy_path.replace(' ', '\ ')
+            escaped_copy_path = escaped_copy_path.replace('&', '\&')
+
+            cmd = EnhanceAips.GLUE_CMD % (primary_path, self.cover_pdf_path, escaped_copy_path)
             logging.debug(cmd)
-            rc = os.system(EnhanceAips.GLUE_CMD % (primary_path, self.cover_pdf_path, copy_path))
+            rc = os.system(cmd)
+
             if (rc != 0):
                 self._error("***\nFAILED to exec: %s" % cmd)
             else:
@@ -235,7 +240,6 @@ class EnhanceAips:
         logging.debug(" _adjust_dc_xml: changed=%s" % unicode(changed))
         return changed
 
-
     def _department(self, name):
         # remove everthing after '(' including '('
         name = name.rsplit('(', 1)[0]
@@ -271,23 +275,35 @@ class EnhanceAips:
         self.error += 1
 
 def main():
+    parser = ArgParser.create()
+    args = parser.parse_args()
+
+    logging.getLogger().setLevel(args.loglevel)
+    logging.basicConfig()
+
+    escaped_thesis = args.thesis.replace('\\','')
+    args.thesis = escaped_thesis
+
+    submissions = VireoSheet.createFromExcelFile(escaped_thesis)
+    submissions.col_index_of(VireoSheet.MULTI_AUTHOR)
+    submissions.log_info()
+
+    # Handle the certs file path
+    escaped_certs = args.add_certs.replace('\\','')
+    args.add_certs = escaped_certs
+
+    # Handle the more certs path
+    moreCerts = submissions.readMoreCerts(escaped_certs, check_id=False)
+    moreCerts.log_info()
+
+    # Handle the restrictions path
+    escaped_restrictions = args.restrictions.replace('\\','')
+    args.restrictions = escaped_restrictions
+
+    restrictions = submissions.readRestrictions(escaped_restrictions, check_id=False)
+    restrictions.log_info()
+
     try:
-        parser = ArgParser.create()
-        args = parser.parse_args()
-
-        logging.getLogger().setLevel(args.loglevel)
-        logging.basicConfig()
-
-        submissions = VireoSheet.createFromExcelFile(args.thesis)
-        submissions.col_index_of(VireoSheet.MULTI_AUTHOR)
-        submissions.log_info()
-
-        moreCerts = submissions.readMoreCerts(args.add_certs, check_id=False)
-        moreCerts.log_info()
-
-        restrictions = submissions.readRestrictions(args.restrictions, check_id=False)
-        restrictions.log_info()
-
         enhancer = EnhanceAips(submissions, args.aips, args.cover_page)
 
         enhancer.addCertiticates(moreCerts)
@@ -296,7 +312,6 @@ def main():
         enhancer.adjust_aips()
         if ( enhancer.error > 0):
             raise RuntimeError("%s errors" % enhancer.error)
-        #_enhanceAips(submissions, moreCerts, restrictions, args.aips)
         sys.exit(0)
 
     except Exception as e:

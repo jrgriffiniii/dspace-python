@@ -1,35 +1,26 @@
-#!/bin/tcsh  -e
+#!/bin/tcsh -e
+
+set department_dir = "export/$department"
+set escaped=`echo $department | sed 's/\(&\)/\\\1/g'`
+set escaped=`echo $escaped | sed 's/\( \)/\\\1/g'`
+set escaped_dir = "export/$escaped"
+
 set restrictions = RestrictionsWithId.xlsx
 set certs =  AdditionalPrograms.xlsx
-
-echo "Restrictions:             export/$restrictions "
+echo "Restrictions:             export/$restrictions"
 echo "Additional Cert Programs: export/$certs"
 
-set department_dir = $1
-set department = `basename $department_dir`
-
-set debug = $2
-
 if ( "$2" == "" ) then
-  (/usr/bin/env python enhanceAips.py --thesis $department_dir/ExcelExport*.xlsx -r $department_dir/$restrictions --cover_page export/SeniorThesisCoverPage.pdf --add_certs $department_dir/$certs --aips $department_dir  -l INFO  > $department_dir/$department.tsv) |& tee  $department_dir/enhancedAips.trace
+  echo $escaped_dir
+
+  (/usr/bin/env python enhanceAips.py --thesis "$escaped_dir/ExcelExport.xlsx" -r "$escaped_dir/$restrictions" --cover_page export/SeniorThesisCoverPage.pdf --add_certs "$escaped_dir/$certs" --aips "$escaped_dir" -l INFO > "$department_dir/$department.tsv") |& tee "$department_dir/enhanceAips.trace"
 else
-  (/usr/bin/env python enhanceAips.py --thesis $department_dir/ExcelExport*.xlsx -r $department_dir/$restrictions --cover_page export/SeniorThesisCoverPage.pdf --add_certs $department_dir/$certs --aips $department_dir  -l INFO)
+  echo $escaped_dir
+
+  /usr/bin/env python enhanceAips.py --thesis "$escaped_dir/ExcelExport.xlsx" -r "$escaped_dir/$restrictions" --cover_page export/SeniorThesisCoverPage.pdf --add_certs "$escaped_dir/$certs" --aips "$escaped_dir" -l INFO
 endif
 
-/usr/bin/env python sortByStatus.py  --thesis $department_dir/ExcelExport*.xlsx --aips $department_dir
-
-foreach f ($department_dir/DSpaceSimpleArchive/Approved $department_dir/DSpaceSimpleArchive/Cancelled $department_dir/DSpaceSimpleArchive/Submitted $department_dir/DSpaceSimpleArchive/Not-Submitted $department_dir/DSpaceSimpleArchive/Under-Review)
-  if (-e $f) then
-    echo -n "$f :"
-    ls -d $f/*/submission* | wc -l
-  endif
-end
-
-if -e $department_dir/Multi-Author then
-  echo "*** this batch contains multi authors thesis, see $department_dir/Multi-Author "
-endif
-
-echo ""
+/usr/bin/env python sortByStatus.py  --thesis "$department_dir/ExcelExport.xlsx" --aips "$department_dir"
 
 echo "Tarring file ..."
-(cd export; tar cfz $department.tgz ./$department)
+(cd export; tar cfz "$department.tgz" "./$department")

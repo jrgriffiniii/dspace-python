@@ -116,8 +116,8 @@ cp ~/AdditionalPrograms.xlsx export/$department/AdditionalPrograms.xlsx
 ## Building DSpace Submission Information Packages (SIPs)
 
 Please note that this assumes that you have downloaded the Thesis Central 
-departmental Excel Spreadsheet into `~/Download/thesis_central_export.xlsx`, and
-the departmental DSpace Simple Archive into `~/Download/dspace_simple_archive.zip`.
+departmental Excel Spreadsheet into `downloads/thesis_central_export.xlsx`, and
+the departmental DSpace Simple Archive into `downloads/dspace_simple_archive.zip`.
 
 ### Cleaning the Environment
 
@@ -127,12 +127,12 @@ set department="English"
 source clean-simple-archives
 ```
 
-### Rebuilding SIPs
+### Initializing the Environment
 
 ```bash
 /bin/tcsh
 set department="English"
-source prepare-to-dataspace export/$department
+source init-simple-archives
 ```
 
 ### Building SIPs
@@ -140,13 +140,25 @@ source prepare-to-dataspace export/$department
 ```bash
 /bin/tcsh
 set department="English"
-mkdir export/$department
-cp ~/Download/thesis_central_export.xlsx export/$department/ExcelExport.xlsx
-cp ~/Download/dspace_simple_archive.zip export/$department/
-cd export/$department
-unzip dspace_simple_archive.zip
-cd -
-source prepare-to-dataspace export/$department
+source prepare-to-dataspace "export/$department"
+```
+
+## Multi-Author Submissions
+
+```bash
+/bin/tcsh
+set department="Multi-Author"
+source clean-simple-archives
+source init-simple-archives
+set department="Mechanical\ \&\ Aerospace\ Engr"
+source clean-simple-archives
+source init-simple-archives
+```
+
+```bash
+/bin/tcsh
+set department="Mechanical\ \&\ Aerospace\ Engr"
+source prepare-to-dataspace "export/$department"
 ```
 
 ### Transfer the files to the server

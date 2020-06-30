@@ -1,4 +1,3 @@
-
 from lxml import etree as ET
 
 import argparse
@@ -62,13 +61,15 @@ class SortByStatus():
                 subdir = 'Multi-Author'
             else:
                 subdir = ''
-            subdir = subdir + "/" + vals[status_idx].replace(' ', '-')
+            # This uses the "Status" value in the new subdirectory name
+            status_subdir = subdir + "/" + vals[status_idx].replace(' ', '-')
             dept = vals[department_idx]
-            #print(sub_id, vals[multi_author_idx].upper(), subdir)
-            sub_dir_name = "%s/%s/%s" % ( self.aip_dir, subdir, dept.replace(" ", "_"))
+
+            sub_dir_name = "%s/%s" % ( self.aip_dir, status_subdir)
             if not os.path.exists(sub_dir_name):
                 os.makedirs(sub_dir_name)
-            cur_dir = "%s/submission_%d" % (self.aip_dir, sub_id)
+
+            cur_dir = "%s/DSpaceSimpleArchive/submission_%d" % (self.aip_dir, sub_id)
             new_dir = "%s/submission_%d" % (sub_dir_name, sub_id)
             os.rename(cur_dir, new_dir)
 
