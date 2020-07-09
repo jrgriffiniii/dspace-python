@@ -99,7 +99,12 @@ Then, one must add an `ID` column to this exported spreadsheet:
 ![alt text](./docs/thesis-central_screenshot_2.png)
 
 ```bash
-/usr/bin/env python restrictionsFindIds.py
+/bin/tcsh
+set department="Mechanical & Aerospace Engr"
+/usr/bin/env pipenv run python restrictionsFindIds.py --thesis export/$department/ExcelExport.xlsx --restrictions export/$department/RestrictionsWithId.xlsx
+
+cp ~/RestrictionsWithId.xlsx export/RestrictionsWithId.xlsx
+cp ~/RestrictionsWithId.xlsx export/$department/RestrictionsWithId.xlsx
 ```
 
 ## Adding the Academic Programs
@@ -147,48 +152,27 @@ source prepare-to-dataspace "export/$department"
 
 ```bash
 /bin/tcsh
-set department="Multi-Author"
-source clean-simple-archives
-source init-simple-archives
-set department="Mechanical\ \&\ Aerospace\ Engr"
+set department="Mechanical & Aerospace Engr"
 source clean-simple-archives
 source init-simple-archives
 ```
 
 ```bash
 /bin/tcsh
-set department="Mechanical\ \&\ Aerospace\ Engr"
+set department="Mechanical & Aerospace Engr"
 source prepare-to-dataspace "export/$department"
 ```
 
-### Transfer the files to the server
+### Transfer the SIPs to the server
 
 ```bash
-set user=MY_SSH_USER
+/bin/tcsh
+set user=SSH_USER
 set host=updatespace.princeton.edu # Or, for production, dataspace.princeton.edu
-scp -P 1234 export/$department.tgz $user@localhost:/var/scratch/thesis-central/$department.tgz
-ssh -J $user@epoxy.princeton.edu $user@$host chmod o+r /var/scratch/thesis-central/$department.tgz
-```
+set department="Mechanical & Aerospace Engr"
 
-### Multi-Author Submissions
-
-```bash
-/bin/tcsh
-cd export/Multi-Author
-check_all_approved
-
-combine_all_approved
-check_after_combine
-```
-
-#### Transfer the SIPs to the server
-
-```bash
-/bin/tcsh
-set department="Multi-Author"
-(cd export; tar cfz $department.tgz ./$department)
-scp -P 1234 $department.tgz $user@localhost:/var/scratch/thesis-central/$department.tgz
-ssh -J $user@epoxy.princeton.edu $user@$host /usr/bin/chmod o+r /var/scratch/thesis-central/$department.tgz
+scp -P 1234 "export/$department.tgz" $user@localhost:"/var/scratch/thesis-central/"
+ssh -J $user@epoxy.princeton.edu $user@$host chmod o+r "/var/scratch/thesis-central/$escaped.tgz"
 ```
 
 ## Import to DataSpace
@@ -212,15 +196,31 @@ unlink /dspace/www/thesis_central/$department/Approved
 rm -rf /dspace/www/thesis_central/$department/tc_export/
 ```
 
+### Building Multi-Author Directories
+
+```bash
+mkdir /dspace/www/thesis_central/Multi-Author
+mkdir -p /dspace/www/thesis_central/Multi-Author/Approved/$department
+```
+
 Then please invoke:
 
 ```bash
+/bin/tcsh
+set department=English
+
 ./unwrap
 
 # Just cut and paste the derived .tgz file from the prompt
 # Test access for the directories at https://dataspace.princeton.edu/www/thesis_central/
 
 # Then import to DSpace using the following:
-./import
+
+set collection_handle = 88435/dsp01qf85nb35s
+set eperson = dspace-admin@princeton.edu
+set mapfile = import-`date +%s`
+set source = /dspace/www/thesis_central/$department/tc_export/Approved/
+
+/dspace/bin/dspace import --add --collection $collection_handle --eperson $eperson --mapfile test-import.map --source /dspace/www/thesis_central/$department/tc_export/Approved
 ```
 
