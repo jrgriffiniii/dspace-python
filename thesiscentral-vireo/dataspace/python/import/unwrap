@@ -17,9 +17,11 @@ cd "$dept"
 echo "extracting $SCRATCH_DIR/thesis-central/$dept.tgz into `pwd`"
 
 tar xfz "$SCRATCH_DIR/thesis-central/$dept.tgz"
-mv "$dept" tc_export
-ln -s "tc_export/$dept.tsv" .
-ln -s "tc_export/Approved" .
+
+# This fails between departments - perhaps this should be removed?
+# mv "$dept" tc_export
+# ln -s "tc_export/$dept.tsv" .
+# ln -s "tc_export/Approved" .
 
 # Ensure that all directories can be opened
 find . -type d -exec chmod o+rx {} \;

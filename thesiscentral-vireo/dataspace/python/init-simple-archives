@@ -1,6 +1,6 @@
 #!/bin/tcsh -e
 
-mkdir export/"$department"
+if ( ! -d export/"$department" ) mkdir export/"$department"
 set escaped=`echo $department | sed 's/\(&\)/\\\1/g'`
 set escaped=`echo $escaped | sed 's/\( \)/\\\1/g'`
 

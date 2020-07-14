@@ -48,6 +48,33 @@ enhance pu-metadata.xml in AIPS in submission_<ID> subdirections of export direc
         return args
 
 class EnhanceAips:
+    """
+    Class for combining data from several Excel Spreadsheets and generating the output DSpace archival information packages (AIPs).
+
+    Attributes
+    ----------
+    aip_dir : string
+        The directory for the AIP packages to be written
+
+    cover_pdf_path : string
+        The directory path for the PDF cover generation
+
+    submissions : VireoSheet
+        The VireoSheet for tracking thesis submissions in a spreadsheet
+
+    submissions_tbl : list
+        A nested list copying the submission record values, along with the metadata extracted from the permissions and requirements spreadsheets
+
+    walkin_idx : int
+        The column index for the Mudd walk-in restriction permissions
+
+    embargo_idx : int
+        The column index for the embargo spreadsheet
+
+    classyear : int
+        The graduating class year of the thesis submissions
+
+    """
     EXPORT_STATUS = ['Approved']
     WALKIN_MSG = 'Walk-in Access. This thesis can only be viewed on computer terminals at the <a href=http://mudd.princeton.edu>Mudd Manuscript Library</a>.'
     GLUE_CMD ="gs -dBATCH -dNOPAUSE -q -sDEVICE=pdfwrite \"-sOutputFile=%s\" %s %s"
@@ -139,6 +166,16 @@ class EnhanceAips:
                     sub[cp_idx].append(pgm)
 
     def addRestrictions(self, vireo_sheet):
+        """
+        Modifies the self.submissions variable, containing the VireoSheet instance for the departmental restrictions exported from the Department of the Registrar.
+
+        Parameters
+        ----------
+        vireo_sheet : VireoSheet
+            The VireoSheet object constructed from the Excel Spreadsheet for the restrictions.
+
+        """
+
         idx = self.submissions.col_index_of(VireoSheet.ID)
         walkin_idx = vireo_sheet.col_index_of(VireoSheet.R_WALK_IN)
         embargo_idx = vireo_sheet.col_index_of(VireoSheet.R_EMBARGO)
@@ -156,6 +193,11 @@ class EnhanceAips:
                     logging.info("ADDING restriction submission with ID %d: walkin %s, embargo %d" %(sub[idx], unicode(sub[self.walkin_idx]), sub[self.embargo_idx]))
 
     def adjust_aips(self):
+        """
+        This generates the XML files for the Princeton-specific and generic DSpace metadata. The self.submissions_tbl variable stores the combined data for the submissions, which are used to generate the XML Documents.
+
+        """
+
         idx = self.submissions.col_index_of(VireoSheet.ID)
         for sub in self.submissions_tbl:
             try:
@@ -211,6 +253,18 @@ class EnhanceAips:
         return True
 
     def  _create_pu_xml(self, sub, glued):
+        """
+        This generates the Princeton-specific XML metadata for the DSpace AIP.
+
+        Parameters
+        ----------
+        sub : list
+            The list of values for the submission record
+
+        glued : bool
+            Whether or not there has been generated a PDF cover page for the thesis
+
+        """
         author_id_idx = self.submissions.col_index_of(VireoSheet.STUDENT_ID)
         dept_idx = self.submissions.col_index_of(VireoSheet.DEPARTMENT)
         pgm_idx = self.submissions.col_index_of(VireoSheet.CERTIFICATE_PROGRAM)

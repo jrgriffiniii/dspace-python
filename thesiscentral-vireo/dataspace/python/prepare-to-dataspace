@@ -10,17 +10,18 @@ set certs =  AdditionalPrograms.xlsx
 echo "Restrictions:             export/$restrictions"
 echo "Additional Cert Programs: export/$certs"
 
-if ( "$2" == "" ) then
-  echo $escaped_dir
-
-  (/usr/bin/env pipenv run python enhanceAips.py --thesis "$escaped_dir/ExcelExport.xlsx" -r "$escaped_dir/$restrictions" --cover_page export/SeniorThesisCoverPage.pdf --add_certs "$escaped_dir/$certs" --aips "$escaped_dir" -l INFO > "$department_dir/$department.tsv") |& tee "$department_dir/enhanceAips.trace"
-else
+if ( "$2" == "--debug" || "$2" == "-D" ) then
   echo $escaped_dir
 
   /usr/bin/env pipenv run python enhanceAips.py --thesis "$escaped_dir/ExcelExport.xlsx" -r "$escaped_dir/$restrictions" --cover_page export/SeniorThesisCoverPage.pdf --add_certs "$escaped_dir/$certs" --aips "$escaped_dir" -l INFO
+else
+  echo $escaped_dir
+
+  (/usr/bin/env pipenv run python enhanceAips.py --thesis "$escaped_dir/ExcelExport.xlsx" -r "$escaped_dir/$restrictions" --cover_page export/SeniorThesisCoverPage.pdf --add_certs "$escaped_dir/$certs" --aips "$escaped_dir" -l INFO > "$department_dir/$department.tsv") |& tee "$department_dir/enhanceAips.trace"
 endif
 
 /usr/bin/env pipenv run python sortByStatus.py  --thesis "$department_dir/ExcelExport.xlsx" --aips "$department_dir"
 
 cd export/"$department"
-tar --create --file="$department.tgz" --gzip --verbose --exclude=DSpaceSimpleArchive/ --exclude=DSpaceSimpleArchive.zip "./$department"
+tar --create --file="$department.tgz" --gzip --verbose --exclude=DSpaceSimpleArchive/ --exclude=DSpaceSimpleArchive.zip .
+cd -

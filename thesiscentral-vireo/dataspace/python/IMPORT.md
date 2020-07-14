@@ -84,8 +84,8 @@ One then exports both the `Excel Export (with Document URLs)`:
 
 ![alt text](./docs/thesis-central_screenshot_6.png)
 
-Please download the Excel Export into `~/Download/thesis_central_export.xlsx`, 
-and the DSpace Simple Archive into `~/Download/dspace_simple_archive.zip`.
+Please download the Excel Export into `~/Download/ExcelExport.xlsx`, 
+and the DSpace Simple Archive into `~/Download/DSpaceSimpleArchive.zip`.
 
 ## Applying Restrictions
 
@@ -93,18 +93,21 @@ One must then export the submission restrictions from the University Sharepoint
 provided by the Office of the Registrar (please download the latest export from 
 [Google Drive](https://drive.google.com/file/d/1yVsV5PG-WPtj-eV7lHGRbuj3sVUGdwZh/view?usp=sharing)).
 
-Then, one must add an `ID` column to this exported spreadsheet:
+Then, one must add an `ID` column to this exported Spreadsheet:
 
 ![alt text](./docs/thesis-central_screenshot_1.png)
 ![alt text](./docs/thesis-central_screenshot_2.png)
 
+Finally, one must update the spreadsheet with the following:
+
 ```bash
 /bin/tcsh
 set department="Mechanical & Aerospace Engr"
-/usr/bin/env pipenv run python restrictionsFindIds.py --thesis export/$department/ExcelExport.xlsx --restrictions export/$department/RestrictionsWithId.xlsx
 
 cp ~/RestrictionsWithId.xlsx export/RestrictionsWithId.xlsx
 cp ~/RestrictionsWithId.xlsx export/$department/RestrictionsWithId.xlsx
+
+/usr/bin/env pipenv run python restrictionsFindIds.py --thesis export/$department/ExcelExport.xlsx --restrictions export/$department/RestrictionsWithId.xlsx
 ```
 
 ## Adding the Academic Programs
@@ -121,8 +124,8 @@ cp ~/AdditionalPrograms.xlsx export/$department/AdditionalPrograms.xlsx
 ## Building DSpace Submission Information Packages (SIPs)
 
 Please note that this assumes that you have downloaded the Thesis Central 
-departmental Excel Spreadsheet into `downloads/thesis_central_export.xlsx`, and
-the departmental DSpace Simple Archive into `downloads/dspace_simple_archive.zip`.
+departmental Excel Spreadsheet into `downloads/ExcelExport.xlsx`, and
+the departmental DSpace Simple Archive into `downloads/DSpaceSimpleArchive.zip`.
 
 ### Cleaning the Environment
 
@@ -145,7 +148,11 @@ source init-simple-archives
 ```bash
 /bin/tcsh
 set department="English"
+pipenv install lxml
 source prepare-to-dataspace "export/$department"
+
+# Or, for when debugging
+source prepare-to-dataspace "export/$department" --debug
 ```
 
 ## Multi-Author Submissions
@@ -171,8 +178,8 @@ set user=SSH_USER
 set host=updatespace.princeton.edu # Or, for production, dataspace.princeton.edu
 set department="Mechanical & Aerospace Engr"
 
-scp -P 1234 "export/$department.tgz" $user@localhost:"/var/scratch/thesis-central/"
-ssh -J $user@epoxy.princeton.edu $user@$host chmod o+r "/var/scratch/thesis-central/$escaped.tgz"
+scp -P 1234 "export/$department/$department.tgz" $user@localhost:"/var/scratch/thesis-central/"
+ssh -J $user@epoxy.princeton.edu $user@$host chmod o+r "/var/scratch/thesis-central/$department.tgz"
 ```
 
 ## Import to DataSpace
@@ -181,6 +188,7 @@ From the DataSpace server environment, please invoke the following:
 
 ```bash
 /bin/tcsh
+set department="Mechanical & Aerospace Engr"
 ssh -J $user@epoxy.princeton.edu $user@$host
 su - root
 su - dspace
@@ -209,10 +217,16 @@ Then please invoke:
 /bin/tcsh
 set department=English
 
-./unwrap
+source ./unwrap
 
-# Just cut and paste the derived .tgz file from the prompt
-# Test access for the directories at https://dataspace.princeton.edu/www/thesis_central/
+# This is necessary until the unwrap procedure is reimplemented
+
+mkdir tc_export
+mv English.tsv tc_export/
+mv Approved tc_export/
+
+# This is necessary due to certain export limitations for metadata_pu.xml files
+grep -lr 'is not supported by the DSpace Simple Archive format' "/dspace/www/thesis_central/$department/tc_export/Approved/" | xargs rm
 
 # Then import to DSpace using the following:
 
@@ -221,6 +235,6 @@ set eperson = dspace-admin@princeton.edu
 set mapfile = import-`date +%s`
 set source = /dspace/www/thesis_central/$department/tc_export/Approved/
 
-/dspace/bin/dspace import --add --collection $collection_handle --eperson $eperson --mapfile test-import.map --source /dspace/www/thesis_central/$department/tc_export/Approved
+/dspace/bin/dspace import --add --collection $collection_handle --eperson $eperson --mapfile "import-$department.map" --source /dspace/www/thesis_central/$department/tc_export/Approved
 ```
 

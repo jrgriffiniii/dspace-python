@@ -2,11 +2,6 @@ import logging
 import openpyxl
 from  openpyxl import Workbook
 
-if (False):
-    import importlib
-    importlib.reload(vireo); v = vireo.VireoSheet.createFromExcelFile('Restrictions.xlsx'); vc = vireo.createWithAddedColumn('test', v, 'ID')
-    importlib.reload(vireo); v = vireo.VireoSheet.createFromExcelFile('Restrictions.xlsx'); v.save("R")
-
 def snippet():
     logging.getLogger().setLevel('INFO')
     # code snippet when in case you want to test in interactive python
@@ -184,13 +179,31 @@ class VireoSheet:
         return add_certs
 
     def readRestrictions(self, restriction_file, check_id=True):
+        """
+        Parses the restrictions Excel spreadsheet provided by Department of the Registrar
+
+        Parameters
+        ----------
+        restriction_file : string
+            The path to the Excel restriction file
+
+        check_id : bool
+            Whether or not to check for restriction IDs which are not in the submission IDs
+
+        Returns
+        -------
+        VireoSheet
+            The VireoSheet object constructed from the parsed Excel Spreadsheet
+
+        """
+
         restrictions = VireoSheet.createFromExcelFile(restriction_file, unique_ids=False)
         # check that necessary columns are present
         restrictions.col_index_of(VireoSheet.R_STUDENT_NAME, required=True)
         restrictions.col_index_of(VireoSheet.R_TITLE, required=True)
         restrictions.col_index_of(VireoSheet.R_WALK_IN, required=True)
         restrictions.col_index_of(VireoSheet.R_EMBARGO, required=True)
-        # check wheter restriction IDs make sense
+        # check whether restriction IDs make sense
         # look through whether certs file info matches thesis sheet info
         if (check_id):
             for restr_id in restrictions.id_rows:
