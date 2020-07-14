@@ -53,6 +53,7 @@ class VireoSheet:
     def __init__(self, workbook, name, unique_ids=True):
         self.file_name = name
         self.unique_ids = unique_ids
+
         if (workbook):
             self._thesis_wb = workbook
             if (1 != len(self._thesis_wb.worksheets)) :
@@ -67,11 +68,19 @@ class VireoSheet:
     @staticmethod
     def createFromExcelFile(file_name, unique_ids=True):
         """
-        read from execl file
-        create VireoSHeet from Workbook
+        Factory method for constructing VireoSheet objects from Excel spreadsheet workbook
 
-        :param file_name:   excel file
-        :return VireoSHeet
+        Parameters
+        ----------
+        file_name : string
+            The file system path to the Excel spreadsheet
+        unique_ids : bool
+            Whether or not to enforce unique IDs in the spreadsheet rows
+
+        Returns
+        -------
+        VireoSheet
+            The newly-constructed VireoSheet from the Excel spreadsheet
         """
         if (file_name):
             thesis_wb = openpyxl.load_workbook(filename = file_name)
@@ -140,17 +149,26 @@ class VireoSheet:
 
     def _derive_id_hash(self):
         id_rows = {}
+
         for row in self._sheet.iter_rows(min_row=2):
-            if not row[self.id_col].value:
-                logging.warning("%s: Row has no ID value: %s" % (self.file_name, str.join(',',(str(cell.value).strip() for cell in row))))
-            else:
-                id = int(row[self.id_col].value)
-                if not id in id_rows:
-                    id_rows[id] = [row]
-                elif self.unique_ids:
-                    raise Exception("%s has duplicate id %s" % (self.file_name, str(id)))
+
+            try:
+                cell = row[self.id_col]
+                if not cell.value:
+                    first_field = str(row[0].value.encode('utf-8'))
+                    logging.warning("%s: Row has no ID value: %s" % (self.file_name, first_field))
                 else:
-                    id_rows[id].append(row)
+                    row_id = int(row[self.id_col].value)
+                    if not row_id in id_rows:
+                        id_rows[row_id] = [row]
+                    elif self.unique_ids:
+                        raise Exception("%s has duplicate id %s" % (self.file_name, str(row_id)))
+                    else:
+                        id_rows[row_id].append(row)
+            except Exception as inst:
+                import pdb; pdb.set_trace()
+                pass
+
         return id_rows
 
     def readMoreCerts(self, add_certs_file, check_id=True):

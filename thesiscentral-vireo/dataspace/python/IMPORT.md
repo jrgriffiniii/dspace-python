@@ -84,16 +84,19 @@ One then exports both the `Excel Export (with Document URLs)`:
 
 ![alt text](./docs/thesis-central_screenshot_6.png)
 
-Please download the Excel Export into `~/Download/ExcelExport.xlsx`, 
-and the DSpace Simple Archive into `~/Download/DSpaceSimpleArchive.zip`.
+Please download the Excel Export into `downloads/ExcelExport.xlsx`, and the 
+DSpace Simple Archive into `downloads/DSpaceSimpleArchive.zip`.
 
 ## Applying Restrictions
 
 One must then export the submission restrictions from the University Sharepoint
 provided by the Office of the Registrar (please download the latest export from 
-[Google Drive](https://drive.google.com/file/d/1yVsV5PG-WPtj-eV7lHGRbuj3sVUGdwZh/view?usp=sharing)).
+[Google Drive](https://drive.google.com/file/d/1yVsV5PG-WPtj-eV7lHGRbuj3sVUGdwZh/view?usp=sharing) to `downloads/Restrictions.xlsx`).
 
-Then, one must add an `ID` column to this exported Spreadsheet:
+Then, one must copy the file, and add an `ID` column to this exported Spreadsheet:
+```
+cp downloads/Restrictions.xlsx downloads/RestrictionsWithId.xlsx
+```
 
 ![alt text](./docs/thesis-central_screenshot_1.png)
 ![alt text](./docs/thesis-central_screenshot_2.png)
@@ -104,8 +107,9 @@ Finally, one must update the spreadsheet with the following:
 /bin/tcsh
 set department="Mechanical & Aerospace Engr"
 
-cp ~/RestrictionsWithId.xlsx export/RestrictionsWithId.xlsx
-cp ~/RestrictionsWithId.xlsx export/$department/RestrictionsWithId.xlsx
+# This shouldn't be necessary, but requires that the Python scripts be rewritten
+cp downloads/RestrictionsWithId.xlsx export/RestrictionsWithId.xlsx
+cp downloads/RestrictionsWithId.xlsx export/$department/RestrictionsWithId.xlsx
 
 /usr/bin/env pipenv run python restrictionsFindIds.py --thesis export/$department/ExcelExport.xlsx --restrictions export/$department/RestrictionsWithId.xlsx
 ```
