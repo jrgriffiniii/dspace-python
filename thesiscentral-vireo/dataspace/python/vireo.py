@@ -1,18 +1,7 @@
 import logging
 import openpyxl
-from  openpyxl import Workbook
-
-def snippet():
-    logging.getLogger().setLevel('INFO')
-    # code snippet when in case you want to test in interactive python
-    wb = openpyxl.load_workbook(filename = 'Thesis.xlsx')
-    sheet = wb.worksheets[0]
-    v = VireoSheet('Thesis.xlsx')
-    v.log_info()
-    certs = v.readMoreCerts('AdditionalPrograms.xlsx')
-    certs.log_info()
-    return certs
-
+from openpyxl import Workbook
+import pandas as pd
 
 class VireoSheet:
     """
@@ -44,7 +33,7 @@ class VireoSheet:
     TITLE = 'Title'
     ID = 'ID'
 
-    #RESTRICTIONS SHEET
+    # RESTRICTIONS SHEET
     R_STUDENT_NAME = 'Submitted By'
     R_TITLE = 'Name'
     R_WALK_IN = 'Walk In Access'
@@ -55,9 +44,13 @@ class VireoSheet:
         self.unique_ids = unique_ids
 
         if (workbook):
+            # This is only referenced for the workbook and to save the spreadsheet
             self._thesis_wb = workbook
+
             if (1 != len(self._thesis_wb.worksheets)) :
                 raise Exception("%s should have exactly one sheet" % (self.file_name))
+
+            # This is what is directly modified in the Excel Spreadsheet
             self._sheet = self._thesis_wb.worksheets[0]
             self.id_col = self.col_index_of(VireoSheet.ID, required=True)
             self.id_rows = self._derive_id_hash()
@@ -132,7 +125,6 @@ class VireoSheet:
         :param col_name: unique column name
         :param value: value to match on
         :return: list of rows that have value in the colum headed by col_name
-
         """
         matches = []
         col_idx = self.col_index_of(col_name)
@@ -144,14 +136,66 @@ class VireoSheet:
         return matches
 
     def save(self, file_name):
+        # Use pandas to save the data set
+        dataset = {}
+        columns = [
+            'Name',
+            'Submitted By',
+            'Created',
+            'Class Year',
+            'Department',
+            'Adviser',
+            'Embargo Years',
+            'Walk In Access',
+            'Initial Review',
+            'Adviser Comments Status',
+            'Adviser Comments',
+            'ODOCReview',
+            'Confirmation Sent',
+            'Approval Notification Sent',
+            'Mudd Status',
+            'Request Type',
+            'Notify Faculty Adviser',
+            'Thesis Uploaded',
+            'Check Thesis Uploaded',
+            'SetFormLink',
+            'Item Type',
+            'Path'
+        ]
+
+        for col in columns:
+            dataset[col] = []
+
+        row_index = 0
+        for row in self._sheet.iter_rows(min_row=2):
+            keys = dataset.keys()
+            cell_index = 0
+
+            for cell in row:
+                try:
+                    column = columns[cell_index - 1]
+
+                    # @todo investigate why this is breaking pandas
+                    if cell_index == 22:
+                        continue
+
+                    dataset[column].append(cell.value)
+                    cell_index += 1
+                except Exception as inst:
+                    import pdb; pdb.set_trace()
+                    pass
+
+            row_index += 1
+
+        data_frame = pd.DataFrame(dataset)
         logging.info("SAVING to: " + file_name)
+
         self._thesis_wb.save(file_name)
 
     def _derive_id_hash(self):
         id_rows = {}
 
         for row in self._sheet.iter_rows(min_row=2):
-
             try:
                 cell = row[self.id_col]
                 if not cell.value:
@@ -235,6 +279,7 @@ class VireoSheet:
         for col in [VireoSheet.STUDENT_EMAIL, VireoSheet.CERTIFICATE_PROGRAM]:
             logging.info("%s column: %s (%s)" % (self.file_name, col, str(self.col_index_of(col))))
         logging.info("---")
+
     def __str__(self):
         return "%s: ID%s-col:%d, nrows:%d" % (self.file_name, ('(unique)' if self.unique_ids else ''), self.id_col, len(self.id_rows))
 
@@ -250,12 +295,15 @@ def createWithAddedColumn(file_name, col_name, unique_ids=True):
     """
 
     from_wb = openpyxl.load_workbook(filename = file_name)
+
     if (1 != len(from_wb.worksheets)) :
         raise Exception("%s should have exactly one sheet" % (file_name))
+
     new_name = "%s_+_%s-column"  % (file_name, col_name)
     wb = Workbook(new_name)
     wb_sheet = wb.create_sheet("MainSheet")
     for row in from_wb.worksheets[0]:
         tpl = row + (None, )
         wb_sheet.append(tpl)
+
     return VireoSheet(wb, new_name, unique_ids)

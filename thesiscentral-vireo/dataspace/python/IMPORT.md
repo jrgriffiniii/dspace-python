@@ -152,7 +152,7 @@ source init-simple-archives
 ```bash
 /bin/tcsh
 set department="English"
-pipenv install lxml
+pipenv install lxml pandas
 source prepare-to-dataspace "export/$department"
 
 # Or, for when debugging

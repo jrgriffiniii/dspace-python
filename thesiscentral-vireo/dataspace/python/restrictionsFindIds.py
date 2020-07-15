@@ -56,7 +56,8 @@ def choose(matches, vireo, print_col_names):
                 import pdb; pdb.set_trace()
                 pass
 
-    choice = raw_input("WHAT DO YOU WANT ? (return or now choice) > ")
+    choice_input = raw_input("WHAT DO YOU WANT ? (return or now choice) > ")
+    choice = int(choice_input)
     try:
         if (choice > 0 and choice <= i):
             return matches[choice - 1]
@@ -64,7 +65,8 @@ def choose(matches, vireo, print_col_names):
             print("%d is invalid - try again" % choice)
             return choose(matches, vireo, print_col_names)
     except Exception as e:
-        print("never mind - try again later")
+        import pdb; pdb.set_trace()
+        print("An error has been encountered: %s" % e.message)
         return None
 
 def save(vireo):
@@ -94,7 +96,7 @@ def matchIds(submissions, restrictions):
     r_title_idx = restrictions.col_index_of(VireoSheet.R_TITLE)
     s_col_ids = [submissions.col_index_of(col) for col in [VireoSheet.STUDENT_NAME, VireoSheet.DOCUMENT_TITLE]]
 
-    # iterator over rows in restrictions workbook
+    # Iterator over rows in restrictions workbook
     # propose matches
     # update whith user choice
     iter = restrictions._sheet.iter_rows()

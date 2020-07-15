@@ -76,13 +76,11 @@ class SortByStatus():
                 cur_dir = "%s/DSpaceSimpleArchive/submission_%d" % (self.aip_dir, sub_id)
                 new_dir = "%s/submission_%d" % (sub_dir_name, sub_id)
 
-                # import pdb; pdb.set_trace()
-                # os.renames(cur_dir, new_dir)
-
                 if not os.path.exists(new_dir):
                     shutil.move(cur_dir, new_dir)
             except Exception as inst:
                 import pdb; pdb.set_trace()
+                pass
 
 def main():
     try:
