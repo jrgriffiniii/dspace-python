@@ -112,6 +112,7 @@ cp downloads/RestrictionsWithId.xlsx export/RestrictionsWithId.xlsx
 cp downloads/RestrictionsWithId.xlsx export/$department/RestrictionsWithId.xlsx
 
 /usr/bin/env pipenv run python restrictionsFindIds.py --thesis export/$department/ExcelExport.xlsx --restrictions export/$department/RestrictionsWithId.xlsx
+cp ImportRestrictions.xlsx export/$department/RestrictionsWithId.xlsx
 ```
 
 ## Adding the Academic Programs
@@ -153,6 +154,11 @@ source init-simple-archives
 /bin/tcsh
 set department="English"
 pipenv install lxml pandas
+
+# Please note that the DSpaceSimpleArchive is decompressed
+rm ./DSpaceSimpleArchive
+unzip DSpaceSimpleArchive.zip
+
 source prepare-to-dataspace "export/$department"
 
 # Or, for when debugging
@@ -171,6 +177,12 @@ source init-simple-archives
 ```bash
 /bin/tcsh
 set department="Mechanical & Aerospace Engr"
+pipenv install lxml pandas
+
+# Please note that the DSpaceSimpleArchive is decompressed
+rm ./DSpaceSimpleArchive
+unzip DSpaceSimpleArchive.zip
+
 source prepare-to-dataspace "export/$department"
 ```
 
@@ -226,7 +238,7 @@ source ./unwrap
 # This is necessary until the unwrap procedure is reimplemented
 
 mkdir tc_export
-mv English.tsv tc_export/
+mv "$department.tsv" tc_export/
 mv Approved tc_export/
 
 # This is necessary due to certain export limitations for metadata_pu.xml files

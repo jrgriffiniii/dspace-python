@@ -199,21 +199,38 @@ class EnhanceAips:
         """
 
         idx = self.submissions.col_index_of(VireoSheet.ID)
+
         for sub in self.submissions_tbl:
+            logging.info("Processing submission %d" % (sub[idx]))
             try:
-                logging.info("Processing submission %d" % (sub[idx]))
                 glued = self._glue_cover_page(sub)
+            except Exception as cover_page_error:
+                import pdb; pdb.set_trace()
+                self._error("Exception submission aip: %d: %s" % (sub[idx], unicode(e)))
+                logging.debug(traceback.format_exc())
+
+            try:
                 sub_xml = self._create_pu_xml(sub, glued)
                 with open(self._xml_file_name(sub[idx], 'metadata_pu'), 'w') as f:
                     self._write_xml_file(sub_xml, f)
+            except Exception as metadata_pu_error:
+                import pdb; pdb.set_trace()
+                self._error("Exception submission aip: %d: %s" % (sub[idx], unicode(e)))
+                logging.debug(traceback.format_exc())
+
+            try:
                 with open(self._xml_file_name(sub[idx], 'dublin_core'), 'r') as f:
-                    root = ET.fromstring(str.encode(f.read()))
+                    xml_content = f.read()
+                    encoded_xml_content = xml_content.decode('utf-8').encode('ascii', 'ignore')
+                    root = ET.fromstring(encoded_xml_content)
+
                     if self._adjust_dc_xml(root, sub):
                         with open(self._xml_file_name(sub[idx], 'dublin_core'), 'w') as f:
                             self._write_xml_file(root, f)
                     else:
                         logging.info("%s unchanged" % f.name)
-            except Exception as e:
+            except Exception as dublin_core_error:
+                import pdb; pdb.set_trace()
                 self._error("Exception submission aip: %d: %s" % (sub[idx], unicode(e)))
                 logging.debug(traceback.format_exc())
 
@@ -321,8 +338,13 @@ class EnhanceAips:
         return None
 
     def _write_xml_file(self, root, file):
+        """
+        Using a file handle, writes XML data into a file
+
+        """
         logging.info("%s writing" % file.name)
-        file.write(ET.tostring(root, encoding='utf8', method='xml', pretty_print=True).decode())
+        file_content = ET.tostring(root, encoding='utf8', method='xml', pretty_print=True)
+        file.write(file_content)
 
     def _error(self, msg):
         logging.error(msg)
