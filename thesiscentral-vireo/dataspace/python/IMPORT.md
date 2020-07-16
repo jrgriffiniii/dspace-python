@@ -107,12 +107,16 @@ Finally, one must update the spreadsheet with the following:
 /bin/tcsh
 set department="Mechanical & Aerospace Engr"
 
+pipenv install lxml pandas
+cp -r "downloads/$department" "export/"
 # This shouldn't be necessary, but requires that the Python scripts be rewritten
 cp downloads/RestrictionsWithId.xlsx export/RestrictionsWithId.xlsx
-cp downloads/RestrictionsWithId.xlsx export/$department/RestrictionsWithId.xlsx
 
-/usr/bin/env pipenv run python restrictionsFindIds.py --thesis export/$department/ExcelExport.xlsx --restrictions export/$department/RestrictionsWithId.xlsx
-cp ImportRestrictions.xlsx export/$department/RestrictionsWithId.xlsx
+cp downloads/RestrictionsWithId.xlsx "export/$department/RestrictionsWithId.xlsx"
+
+/usr/bin/env pipenv run python restrictionsFindIds.py --thesis "export/$department/ExcelExport.xlsx" --restrictions "export/$department/RestrictionsWithId.xlsx"
+
+cp ImportRestrictions.xlsx "export/$department/RestrictionsWithId.xlsx"
 ```
 
 ## Adding the Academic Programs
@@ -123,7 +127,7 @@ Drive](https://drive.google.com/file/d/1K_rrBPY-Pf3DcqbCS-ZxYFjMQl3bIYEM/view?us
 This should please be downloaded and copied with the following:
 ```
 cp ~/AdditionalPrograms.xlsx export/AdditionalPrograms.xlsx
-cp ~/AdditionalPrograms.xlsx export/$department/AdditionalPrograms.xlsx
+cp export/AdditionalPrograms.xlsx "export/$department/AdditionalPrograms.xlsx"
 ```
 
 ## Building DSpace Submission Information Packages (SIPs)
@@ -156,7 +160,8 @@ set department="English"
 pipenv install lxml pandas
 
 # Please note that the DSpaceSimpleArchive is decompressed
-rm ./DSpaceSimpleArchive
+cd "export/$department"
+rm -r ./DSpaceSimpleArchive
 unzip DSpaceSimpleArchive.zip
 
 source prepare-to-dataspace "export/$department"
@@ -178,10 +183,6 @@ source init-simple-archives
 /bin/tcsh
 set department="Mechanical & Aerospace Engr"
 pipenv install lxml pandas
-
-# Please note that the DSpaceSimpleArchive is decompressed
-rm ./DSpaceSimpleArchive
-unzip DSpaceSimpleArchive.zip
 
 source prepare-to-dataspace "export/$department"
 ```
@@ -251,6 +252,6 @@ set eperson = dspace-admin@princeton.edu
 set mapfile = import-`date +%s`
 set source = /dspace/www/thesis_central/$department/tc_export/Approved/
 
-/dspace/bin/dspace import --add --collection $collection_handle --eperson $eperson --mapfile "import-$department.map" --source /dspace/www/thesis_central/$department/tc_export/Approved
+/dspace/bin/dspace import --add --collection $collection_handle --eperson $eperson --mapfile "import-$department.map" --source /dspace/www/thesis_central/$department/tc_export/Approved --workflow
 ```
 

@@ -1,16 +1,16 @@
 import argparse
-
 import logging
 import traceback
 import sys
 import os
+import pdb
 
-# for the benefit of IDE import two ways
+# For the benefit of IDE import two ways
 try:
     from vireo import VireoSheet
-except Exception:
+except Exception as import_error:
+    pdb.set_trace()
     from .vireo import VireoSheet
-
 
 EXPORT_STATUS = ['Approved']
 

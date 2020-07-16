@@ -7,11 +7,13 @@ import traceback
 import os
 import sys
 from shutil import copyfile
+import pdb
 
 # for the benefit of IDE import two ways
 try:
     from vireo import VireoSheet
-except Exception:
+except Exception as import_error:
+    pdb.set_trace()
     from . import vireo
     from vireo import VireoSheet
 
@@ -205,7 +207,7 @@ class EnhanceAips:
             try:
                 glued = self._glue_cover_page(sub)
             except Exception as cover_page_error:
-                import pdb; pdb.set_trace()
+                pdb.set_trace()
                 self._error("Exception submission aip: %d: %s" % (sub[idx], unicode(e)))
                 logging.debug(traceback.format_exc())
 
@@ -391,6 +393,7 @@ def main():
         sys.exit(0)
 
     except Exception as e:
+        pdb.set_trace()
         logging.error(e)
 
         logging.debug(traceback.format_exc())

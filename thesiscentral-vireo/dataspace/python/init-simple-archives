@@ -6,6 +6,6 @@ set escaped=`echo $escaped | sed 's/\( \)/\\\1/g'`
 
 cp downloads/ExcelExport.xlsx "export/$department/ExcelExport.xlsx"
 cp downloads/DSpaceSimpleArchive.zip "export/$department"
-cd export/"$department"
+cd "export/$department"
 unzip DSpaceSimpleArchive.zip
 cd -
