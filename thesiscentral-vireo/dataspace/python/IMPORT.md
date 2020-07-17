@@ -240,10 +240,13 @@ cp "$department.tsv" tc_export/
 ```
 cp -r ./Multi-Author/Approved tc_export/
 cp -r ./Multi-Author/Cancelled tc_export/
+cp -r ./Approved tc_export/
 
-/dspace/bin/dspace import --add --collection $collection_handle --eperson $eperson --mapfile "import-$department-part1.map" --source "/dspace/www/thesis_central/$department/tc_export/Approved" --workflow
+/dspace/bin/dspace import --add --collection $collection_handle --eperson $eperson --mapfile "import-$department-multi-accepted.map" --source "/dspace/www/thesis_central/$department/tc_export/Approved" --workflow
 
-/dspace/bin/dspace import --add --collection $collection_handle --eperson $eperson --mapfile "import-$department-part2.map" --source "/dspace/www/thesis_central/$department/tc_export/Cancelled" --workflow
+/dspace/bin/dspace import --add --collection $collection_handle --eperson $eperson --mapfile "import-$department-multi-cancelled.map" --source "/dspace/www/thesis_central/$department/tc_export/Cancelled" --workflow
+
+/dspace/bin/dspace import --add --collection $collection_handle --eperson $eperson --mapfile "import-$department.map" --source "/dspace/www/thesis_central/$department/tc_export/Cancelled" --workflow
 ```
 
 #### Single Author Submissions
