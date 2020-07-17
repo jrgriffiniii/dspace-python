@@ -205,10 +205,10 @@ From the DataSpace server environment, please invoke the following:
 
 ```bash
 /bin/tcsh
-set department="Mechanical & Aerospace Engr"
 ssh -J $user@epoxy.princeton.edu $user@$host
 su - root
 su - dspace
+set department="Mechanical & Aerospace Engr"
 cd ~/thesiscentral-vireo/dataspace/import
 ```
 

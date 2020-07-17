@@ -14,6 +14,8 @@ if ( "$2" == "--debug" || "$2" == "-D" ) then
   echo $escaped_dir
 
   /usr/bin/env pipenv run python enhanceAips.py --thesis "$escaped_dir/ExcelExport.xlsx" -r "$escaped_dir/$restrictions" --cover_page export/SeniorThesisCoverPage.pdf --add_certs "$escaped_dir/$certs" --aips "$escaped_dir" -l INFO
+
+  if ( $? != 0 ) exit $?
 else
   echo $escaped_dir
 

@@ -175,7 +175,6 @@ class EnhanceAips:
         ----------
         vireo_sheet : VireoSheet
             The VireoSheet object constructed from the Excel Spreadsheet for the restrictions.
-
         """
 
         idx = self.submissions.col_index_of(VireoSheet.ID)
@@ -197,7 +196,6 @@ class EnhanceAips:
     def adjust_aips(self):
         """
         This generates the XML files for the Princeton-specific and generic DSpace metadata. The self.submissions_tbl variable stores the combined data for the submissions, which are used to generate the XML Documents.
-
         """
 
         idx = self.submissions.col_index_of(VireoSheet.ID)
@@ -207,13 +205,15 @@ class EnhanceAips:
             try:
                 glued = self._glue_cover_page(sub)
             except Exception as cover_page_error:
-                pdb.set_trace()
+                import pdb; pdb.set_trace()
                 self._error("Exception submission aip: %d: %s" % (sub[idx], unicode(e)))
                 logging.debug(traceback.format_exc())
 
             try:
                 sub_xml = self._create_pu_xml(sub, glued)
-                with open(self._xml_file_name(sub[idx], 'metadata_pu'), 'w') as f:
+                metadata_pu_file_path = self._xml_file_name(sub[idx], 'metadata_pu')
+
+                with open(metadata_pu_file_path, 'w') as f:
                     self._write_xml_file(sub_xml, f)
             except Exception as metadata_pu_error:
                 import pdb; pdb.set_trace()
@@ -236,16 +236,17 @@ class EnhanceAips:
                 self._error("Exception submission aip: %d: %s" % (sub[idx], unicode(e)))
                 logging.debug(traceback.format_exc())
 
-
     def _glue_cover_page(self, sub):
         """
             return true cover was glued successfully
             return false if there was no primary doc to cover
             error out if glue operation fails
         """
+
         status_idx = self.submissions.col_index_of(VireoSheet.STATUS)
         sub_id = sub[self.submissions.col_index_of(VireoSheet.ID)]
         primary_path  = self._primary_doc_path(sub_id)
+
         if (not primary_path):
             logging.debug("submission %d has no primary document" % sub_id)
             if (sub[status_idx] in EnhanceAips.EXPORT_STATUS):
@@ -284,6 +285,7 @@ class EnhanceAips:
             Whether or not there has been generated a PDF cover page for the thesis
 
         """
+
         author_id_idx = self.submissions.col_index_of(VireoSheet.STUDENT_ID)
         dept_idx = self.submissions.col_index_of(VireoSheet.DEPARTMENT)
         pgm_idx = self.submissions.col_index_of(VireoSheet.CERTIFICATE_PROGRAM)
@@ -292,6 +294,7 @@ class EnhanceAips:
         root = ET.Element('dublin_core', {'schema' : 'pu', 'encoding': "utf-8"})
         self._add_el(root, 'date.classyear', self.classyear)
         self._add_el(root, 'contributor.authorid', sub[author_id_idx])
+
         if (glued):
             self._add_el(root, 'pdf.coverpage', 'SeniorThesisCoverPage')
         if (sub[self.embargo_idx] > 0):
@@ -331,12 +334,53 @@ class EnhanceAips:
         ET.SubElement(root, 'dcvalue', attrib=attrs).text = unicode(value)
 
     def _xml_file_name(self, sub_id, name):
-        return "%s/DSpaceSimpleArchive/submission_%d/%s.xml" % (self.aip_dir, sub_id, name)
+        """
+        Generate the XML file name
+
+        Parameters
+        ----------
+        sub_id : int
+        name : string
+        """
+
+        file_path = "%s/DSpaceSimpleArchive/submission_%d/%s.xml" % (self.aip_dir, sub_id, name)
+        if not os.path.exists(file_path):
+            file_path = "%s/Multi-Author/Cancelled/submission_%d/%s.xml" % (self.aip_dir, sub_id, name)
+
+        return file_path
 
     def _primary_doc_path(self, sub_id):
-        for line in open("%s/DSpaceSimpleArchive/submission_%d/contents" % ( self.aip_dir, sub_id)):
+        """
+        This returns the path to the file used for the primary bitstream
+
+        Parameters
+        ----------
+        sub_id : string
+            The ID of the submission record
+
+        """
+
+        file_path = "%s/DSpaceSimpleArchive/submission_%d/contents" % (self.aip_dir, sub_id)
+
+        if not os.path.exists(file_path):
+            file_path = "%s/Multi-Author/Cancelled/submission_%d/contents" % (self.aip_dir, sub_id)
+
+        try:
+            fh = open(file_path)
+        except Exception as primary_doc_error:
+            import pdb; pdb.set_trace()
+
+        for line in fh:
             if "primary:true" in line:
-                return "%s/DSpaceSimpleArchive/submission_%d/%s" % (self.aip_dir, sub_id, line.split("\t")[0])
+                fh.close()
+                fields = line.split("\t")
+                first_field = fields[0]
+                primary_file_path = "%s/DSpaceSimpleArchive/submission_%d/%s" % (self.aip_dir, sub_id, first_field)
+                if not os.path.exists(primary_file_path):
+                    primary_file_path = "%s/Multi-Author/Cancelled/submission_%d/%s" % (self.aip_dir, sub_id, first_field)
+
+                return primary_file_path
+
         return None
 
     def _write_xml_file(self, root, file):
@@ -388,7 +432,7 @@ def main():
         enhancer.addRestrictions(restrictions)
         enhancer.print_table(file=sys.stdout)
         enhancer.adjust_aips()
-        if ( enhancer.error > 0):
+        if (enhancer.error > 0):
             raise RuntimeError("%s errors" % enhancer.error)
         sys.exit(0)
 
