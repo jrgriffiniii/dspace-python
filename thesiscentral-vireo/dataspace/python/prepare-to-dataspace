@@ -24,15 +24,31 @@ endif
 
 /usr/bin/env pipenv run python sortByStatus.py  --thesis "$department_dir/ExcelExport.xlsx" --aips "$department_dir"
 
-cd export/"$department"
-tar \
-  --create \
-  --file="$department.tgz" \
-  --gzip \
-  --verbose \
-  --exclude=DSpaceSimpleArchive/ \
-  --exclude=DSpaceSimpleArchive.zip \
-  --exclude="$department.tgz" \
+cd "export/$department"
+
+if ( -d Multi-Author ) then
+  tar \
+    --create \
+    --file="$department.tgz" \
+    --gzip \
+    --verbose \
+    --exclude=DSpaceSimpleArchive/ \
+    --exclude=DSpaceSimpleArchive.zip \
+    --exclude=Approved/ \
+    --exclude="$department.tgz" \
   .
+
+else
+  tar \
+    --create \
+    --file="$department.tgz" \
+    --gzip \
+    --verbose \
+    --exclude=DSpaceSimpleArchive/ \
+    --exclude=DSpaceSimpleArchive.zip \
+    --exclude="$department.tgz" \
+  .
+
+endif
 
 cd -

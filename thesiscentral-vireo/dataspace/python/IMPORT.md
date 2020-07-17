@@ -216,42 +216,40 @@ One must ensure that the directory used for imports is clean of previous import
 procedures:
 
 ```bash
-unlink /dspace/www/thesis_central/$department/$department.tsv
-unlink /dspace/www/thesis_central/$department/Approved
-rm -rf /dspace/www/thesis_central/$department/tc_export/
-```
-
-### Building Multi-Author Directories
-
-```bash
-mkdir /dspace/www/thesis_central/Multi-Author
-mkdir -p /dspace/www/thesis_central/Multi-Author/Approved/$department
+unlink "/dspace/www/thesis_central/$department/$department.tsv"
+rm -rf "/dspace/www/thesis_central/$department/tc_export/"
 ```
 
 Then please invoke:
 
 ```bash
 /bin/tcsh
-set department=English
+set collection_handle = 88435/dsp01qf85nb35s # Or, the appropriate Collection ARK
+set eperson = dspace-admin@princeton.edu
+set mapfile = import-`date +%s`
 
 source ./unwrap
 
 # This is necessary until the unwrap procedure is reimplemented
 
 mkdir tc_export
-mv "$department.tsv" tc_export/
-mv Approved tc_export/
+cp "$department.tsv" tc_export/
+```
 
-# This is necessary due to certain export limitations for metadata_pu.xml files
-grep -lr 'is not supported by the DSpace Simple Archive format' "/dspace/www/thesis_central/$department/tc_export/Approved/" | xargs rm
+#### Multi-Author Submissions
+```
+cp -r ./Multi-Author/Approved tc_export/
+cp -r ./Multi-Author/Cancelled tc_export/
 
-# Then import to DSpace using the following:
+/dspace/bin/dspace import --add --collection $collection_handle --eperson $eperson --mapfile "import-$department-part1.map" --source "/dspace/www/thesis_central/$department/tc_export/Approved" --workflow
 
-set collection_handle = 88435/dsp01qf85nb35s
-set eperson = dspace-admin@princeton.edu
-set mapfile = import-`date +%s`
-set source = /dspace/www/thesis_central/$department/tc_export/Approved/
+/dspace/bin/dspace import --add --collection $collection_handle --eperson $eperson --mapfile "import-$department-part2.map" --source "/dspace/www/thesis_central/$department/tc_export/Cancelled" --workflow
+```
 
-/dspace/bin/dspace import --add --collection $collection_handle --eperson $eperson --mapfile "import-$department.map" --source /dspace/www/thesis_central/$department/tc_export/Approved --workflow
+#### Single Author Submissions
+```
+cp -r ./Approved tc_export/
+
+/dspace/bin/dspace import --add --collection $collection_handle --eperson $eperson --mapfile "import-$department.map" --source "/dspace/www/thesis_central/$department/tc_export/Approved" --workflow
 ```
 

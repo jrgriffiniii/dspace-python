@@ -18,17 +18,12 @@ echo "extracting $SCRATCH_DIR/thesis-central/$dept.tgz into `pwd`"
 
 tar xfz "$SCRATCH_DIR/thesis-central/$dept.tgz"
 
-# This fails between departments - perhaps this should be removed?
-# mv "$dept" tc_export
-# ln -s "tc_export/$dept.tsv" .
-# ln -s "tc_export/Approved" .
-
 # Ensure that all directories can be opened
 find . -type d -exec chmod o+rx {} \;
 
 # Ensure that all files can be opened
 find . -type f -exec chmod o+r {} \;
 
-find "$DEPT_DIR_PATH/tc_export/DSpaceSimpleArchive" -name 'submission_*' -exec chmod o+rwx {} \;
-find "$DEPT_DIR_PATH/tc_export/DSpaceSimpleArchive" -name 'submission_*' -exec chmod -R o+r {} \;
+find "$DEPT_DIR_PATH/" -name 'submission_*' -exec chmod o+rwx {} \;
+find "$DEPT_DIR_PATH/" -name 'submission_*' -exec chmod -R o+r {} \;
 
