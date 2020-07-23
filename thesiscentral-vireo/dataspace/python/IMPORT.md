@@ -84,8 +84,14 @@ One then exports both the `Excel Export (with Document URLs)`:
 
 ![alt text](./docs/thesis-central_screenshot_6.png)
 
-Please download the Excel Export into `downloads/ExcelExport.xlsx`, and the 
-DSpace Simple Archive into `downloads/DSpaceSimpleArchive.zip`.
+Please download the Excel Export into `downloads/$department/ExcelExport.xlsx`, and the 
+DSpace Simple Archive into `downloads/$department/DSpaceSimpleArchive.zip`.
+
+```
+/bin/tcsh
+set department="Physics"
+mkdir "downloads/$department"
+```
 
 ## Applying Restrictions
 
@@ -126,7 +132,6 @@ Drive](https://drive.google.com/file/d/1K_rrBPY-Pf3DcqbCS-ZxYFjMQl3bIYEM/view?us
 
 This should please be downloaded and copied with the following:
 ```
-cp ~/AdditionalPrograms.xlsx export/AdditionalPrograms.xlsx
 cp export/AdditionalPrograms.xlsx "export/$department/AdditionalPrograms.xlsx"
 ```
 
@@ -149,7 +154,10 @@ source clean-simple-archives
 ```bash
 /bin/tcsh
 set department="English"
-source init-simple-archives
+
+cd "export/$department"
+unzip DSpaceSimpleArchive.zip
+cd -
 ```
 
 ### Building SIPs
@@ -163,11 +171,24 @@ pipenv install lxml pandas
 cd "export/$department"
 rm -r ./DSpaceSimpleArchive
 unzip DSpaceSimpleArchive.zip
+cd -
 
 source prepare-to-dataspace "export/$department"
 
 # Or, for when debugging
 source prepare-to-dataspace "export/$department" --debug
+```
+
+#### Rebuilding SIPs
+
+```
+rm "export/$department/enhanceAips.trace"
+rm "export/$department/$department.tgz"
+rm -fr "export/$department/DSpaceSimpleArchive"
+rm -fr "export/$department/Approved"
+rm -fr "export/$department/Multi-Author"
+cd "export/$department"
+unzip DSpaceSimpleArchive.zip
 ```
 
 ## Multi-Author Submissions
@@ -216,7 +237,6 @@ One must ensure that the directory used for imports is clean of previous import
 procedures:
 
 ```bash
-unlink "/dspace/www/thesis_central/$department/$department.tsv"
 rm -rf "/dspace/www/thesis_central/$department/tc_export/"
 ```
 
@@ -233,25 +253,28 @@ source ./unwrap
 # This is necessary until the unwrap procedure is reimplemented
 
 mkdir tc_export
-cp "$department.tsv" tc_export/
 ```
 
 #### Multi-Author Submissions
 ```
 cp -r ./Multi-Author/Approved tc_export/
 cp -r ./Multi-Author/Cancelled tc_export/
-cp -r ./Approved tc_export/
 
 /dspace/bin/dspace import --add --collection $collection_handle --eperson $eperson --mapfile "import-$department-multi-accepted.map" --source "/dspace/www/thesis_central/$department/tc_export/Approved" --workflow
 
 /dspace/bin/dspace import --add --collection $collection_handle --eperson $eperson --mapfile "import-$department-multi-cancelled.map" --source "/dspace/www/thesis_central/$department/tc_export/Cancelled" --workflow
 
-/dspace/bin/dspace import --add --collection $collection_handle --eperson $eperson --mapfile "import-$department.map" --source "/dspace/www/thesis_central/$department/tc_export/Cancelled" --workflow
+cp -r ./Approved tc_export/
+
+/dspace/bin/dspace import --add --collection $collection_handle --eperson $eperson --mapfile "import-$department.map" --source "/dspace/www/thesis_central/$department/tc_export/Approved" --workflow
 ```
 
 #### Single Author Submissions
 ```
 cp -r ./Approved tc_export/
+
+# Mapfiles must be removed, or else the DSpace import command will fail
+rm "import-$department.map"
 
 /dspace/bin/dspace import --add --collection $collection_handle --eperson $eperson --mapfile "import-$department.map" --source "/dspace/www/thesis_central/$department/tc_export/Approved" --workflow
 ```
