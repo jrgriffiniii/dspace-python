@@ -174,9 +174,6 @@ unzip DSpaceSimpleArchive.zip
 cd -
 
 source prepare-to-dataspace "export/$department"
-
-# Or, for when debugging
-source prepare-to-dataspace "export/$department" --debug
 ```
 
 #### Rebuilding SIPs
