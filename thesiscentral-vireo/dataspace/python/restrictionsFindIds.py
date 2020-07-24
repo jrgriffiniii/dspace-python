@@ -19,14 +19,10 @@ import argparse
 class ArgParser(argparse.ArgumentParser):
     @staticmethod
     def create():
-        description = """
-reate an Excel spreadsheet 
-Read thesis submission info from file given in --thesis option 
-Read access restriction info from --restrictions file 
+        description = """A CLI wrapper for match_ids, a function that looks through the export_file to
+ see if there are any submissions that match in restrictions_file. It exports
+ the department's restricted submissions to output_file."""
 
-fill ID column values where they are None with the submission ID of the matching thesis submission 
-
-"""
         parser = ArgParser(description=description, formatter_class=argparse.RawTextHelpFormatter)
         parser.add_argument('--department', "-d", required=True, help="The department to search for IDs")
         parser.add_argument("--thesis", "-t", required=False, help="Excel export file from vireo", default=None)
