@@ -37,6 +37,10 @@ pipenv lock --pre
 pipenv install
 ```
 
+### Download Ghostscript
+
+The workflow requires Ghostscript to add the cover page. Download on Mac with `brew install ghostscript` or follow the directions on [their website](https://www.ghostscript.com)
+
 ### Tunneling over SSH
 
 In order to execute these scripts, one must first tunnel over SSH for copying
@@ -50,7 +54,7 @@ ssh -L 1234:dataspace.princeton.edu:22 $USER@epoxy.princeton.edu
 server environments for DSpace.
 
 ## Exporting from Thesis Central
-Users must export Excel Spreadsheet after selecting a department from [Thesis Central](thesis-central.princeton.edu).
+Users must export Excel Spreadsheet after selecting a department from [Thesis Central](https://thesis-central.princeton.edu/).
 
 Please note that one must include the following columns in the export:
 
@@ -224,7 +228,7 @@ From the DataSpace server environment, please invoke the following:
 ```bash
 /bin/tcsh
 ssh -J $user@epoxy.princeton.edu $user@$host
-su - root
+sudo su - root
 su - dspace
 set department="Mechanical & Aerospace Engr"
 cd ~/thesiscentral-vireo/dataspace/import
