@@ -22,19 +22,15 @@ pip install pipenv
 #### 3.8.3
 
 ```
-pipenv --python 2.7.18 shell
-pipenv lock --pre
-pipenv install
+pipenv --python 3.8.3 shell
+pip install lxml pandas openpyxl
 ```
 
 #### 2.7.18
 
 ```
-cp Pipfile.legacy Pipfile
-cp Pipfile.legacy.lock Pipfile
 pipenv --python 2.7.18 shell
-pipenv lock --pre
-pipenv install
+pip install lxml pandas openpyxl
 ```
 
 ### Download Ghostscript
@@ -124,7 +120,7 @@ cp downloads/RestrictionsWithId.xlsx export/RestrictionsWithId.xlsx
 
 cp downloads/RestrictionsWithId.xlsx "export/$department/RestrictionsWithId.xlsx"
 
-/usr/bin/env pipenv run python restrictionsFindIds.py --thesis "export/$department/ExcelExport.xlsx" --restrictions "export/$department/RestrictionsWithId.xlsx"
+python restrictionsFindIds.py --thesis "export/$department/ExcelExport.xlsx" --restrictions "export/$department/RestrictionsWithId.xlsx"
 
 cp ImportRestrictions.xlsx "export/$department/RestrictionsWithId.xlsx"
 ```
@@ -246,7 +242,7 @@ Then please invoke:
 ```bash
 /bin/tcsh
 set collection_handle = 88435/dsp01qf85nb35s # Or, the appropriate Collection ARK
-set eperson = dspace-admin@princeton.edu
+set eperson = jrg5@princeton.edu # Or, your own user name
 set mapfile = import-`date +%s`
 
 source ./unwrap
