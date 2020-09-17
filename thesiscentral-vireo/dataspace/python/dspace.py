@@ -3,6 +3,8 @@ import logging
 from pathlib2 import Path
 import os
 import shutil
+import zipfile
+import tarfile
 
 import pdb
 import sys
@@ -106,6 +108,22 @@ def find_programs_spreadsheet(department):
 
     return path
 
+def find_authorizations_spreadsheet(department):
+    dir_path = build_directory_path(department)
+    path = dir_path.joinpath('ImportRestrictions.xlsx')
+
+    return path
+
+def extract_dspace_export(department):
+
+    dir_path = build_directory_path(department)
+    zip_file_path = dir_path.joinpath('DSpaceSimpleArchive.zip')
+
+    with zipfile.ZipFile(str(zip_file_path), "r") as zip_ref:
+        zip_ref.extractall(str(dir_path))
+
+    return True
+
 def prepare_files(department):
     """
 
@@ -121,6 +139,8 @@ def prepare_files(department):
     if not dept_package_path.exists():
         export_package_path = Path('thesiscentral-exports', 'dspace_packages', '%s.zip'.format(dir_name))
         shutil.copy(export_package_path, dept_package_path)
+
+    extract_dspace_export(department)
 
     dept_metadata_path = dir_path.joinpath('ExcelExport.xlsx')
     if not dept_metadata_path.exists():
@@ -159,19 +179,65 @@ def update_package_metadata(department):
 
     return True
 
-@click.command()
+@click.group()
 @click.option('--department',
                 prompt='Department',
                 help='The department being exported')
+
 #@click.option("--loglevel",
 #                type=click.Choice([logging.WARN, logging.INFO, logging.DEBUG], case_sensitive=False),
 #                default=logging.INFO,
 #                help="Verbosity")
-#def export_department(department, loglevel):
-def export_department(department):
+
+@click.pass_context
+def cli(ctx, department):
+    """
+    """
+
+    ctx.ensure_object(dict)
+    ctx.obj['DEPARTMENT'] = department
+
+@cli.command()
+@click.pass_context
+def compress_package(ctx):
+    """
+    """
+
+    department = ctx.obj['DEPARTMENT']
+
+    dir_path = build_directory_path(department)
+    tar_file_name = generate_directory_name(department)
+    tar_file_path = dir_path.joinpath(tar_file_name)
+
+    tar_file = tarfile.open(name=str(tar_file_path), mode='w:gz')
+
+    sip_dir_path = dir_path.joinpath('Approved')
+    tar_file.add(str(sip_dir_path))
+
+    metadata_path = find_vireo_spreadsheet(department)
+    tar_file.add(str(metadata_path))
+
+    restrictions_path = find_restrictions_spreadsheet(department)
+    tar_file.add(str(restrictions_path))
+
+    programs_path = find_programs_spreadsheet(department)
+    tar_file.add(str(programs_path))
+
+    authorizations_path = find_authorizations_spreadsheet(department)
+    tar_file.add(str(authorizations_path))
+
+    tar_file.close()
+
+    return tar_file
+
+@cli.command()
+@click.pass_context
+def export_department(ctx):
     """
 
     """
+
+    department = ctx.obj['DEPARTMENT']
 
     thesis = find_vireo_spreadsheet(department)
     aips = build_directory_path(department)
@@ -182,7 +248,9 @@ def export_department(department):
 
     prepare_files(department)
 
+    # This needs to be a CLI argument
     loglevel=logging.INFO
+
     # Generate the SIP
     status = generate_package(
         department,
@@ -198,7 +266,9 @@ def export_department(department):
 
     status = update_package_metadata(department)
 
+    status = compress_package(department)
+
     return status
 
 if __name__ == '__main__':
-    export_department()
+        cli(obj={})
