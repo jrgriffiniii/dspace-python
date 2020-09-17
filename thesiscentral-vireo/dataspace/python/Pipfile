@@ -9,6 +9,11 @@ verify_ssl = true
 lxml = "*"
 openpyxl = "*"
 pandas = "*"
+click = "*"
+pathlib2 = "*"
 
 [requires]
 python_version = "2.7"
+
+[scripts]
+dspace = "python dspace.py"
