@@ -36,11 +36,11 @@ fill ID column values where they are None with the submission ID of the matching
         args= argparse.ArgumentParser.parse_args(self)
         return args
 
-def choose(matches, vireo, print_col_names):
+def choose(matches, vireo, print_col_names, logger):
     if(len(matches) < 1):
         return None
 
-    print("You have the following choices:")
+    logger.info("You have the following choices:")
 
     for m in matches:
         i = 0
@@ -51,37 +51,32 @@ def choose(matches, vireo, print_col_names):
                 idx = vireo.col_index_of(p)
                 cell_value = m[idx].value.encode('utf-8')
                 option_value = str(cell_value).strip()
-                print("option %d --  %s" % (i, option_value))
+                logger.info("option %d --  %s" % (i, option_value))
             except Exception as inst:
                 import pdb; pdb.set_trace()
                 pass
 
-    choice_input = raw_input("WHAT DO YOU WANT ? (return or now choice) > ")
+    choice_input = raw_input("WHAT DO YOU WANT ? (Only choose option 1) > ")
     choice = int(choice_input)
+
     try:
         if (choice > 0 and choice <= i):
             return matches[choice - 1]
         else:
-            print("%d is invalid - try again" % choice)
-            return choose(matches, vireo, print_col_names)
+            logger.error("%d is invalid - try again" % choice)
+            return choose(matches, vireo, print_col_names, logger)
     except Exception as e:
-        import pdb; pdb.set_trace()
-        print("An error has been encountered: %s" % e.message)
+        logger.error("An error has been encountered: %s" % e.message)
         return None
 
-def save(vireo):
+def save(vireo, logger):
     try:
         current_file_path = os.path.abspath(__file__)
         parent_directory = os.path.abspath(os.path.join(current_file_path, os.pardir))
-        default_path = os.path.abspath(os.path.join( parent_directory, "ImportRestrictions.xlsx" ))
+        default_path = os.path.abspath(os.path.join( parent_directory, "export", "ImportRestrictions.xlsx" ))
 
-        choice_input = raw_input("SAVE to File ? enter filename (RETURN defaults to " + default_path + ") > ")
-        choice = choice_input.strip()
-
-        if ("" != choice):
-            vireo.save(choice)
-        else:
-            vireo.save(default_path)
+        logger.info("Saving the updated authorizations files to {}".format(default_path))
+        vireo.save(default_path)
     except Exception as inst:
         import pdb; pdb.set_trace()
         pass
@@ -90,7 +85,7 @@ def vireoName(r_name):
     splts = r_name.split();
     return '%s, %s' % (splts[-1], splts[0])
 
-def matchIds(submissions, restrictions):
+def matchIds(submissions, restrictions, logger):
     r_id_idx = restrictions.id_col
     r_name_idx = restrictions.col_index_of(VireoSheet.R_STUDENT_NAME)
     r_title_idx = restrictions.col_index_of(VireoSheet.R_TITLE)
@@ -103,9 +98,9 @@ def matchIds(submissions, restrictions):
     _ = next(iter)  # throw header row away
     for row in iter:
         r_name = row[r_name_idx].value.encode('utf-8')
-        print("----------------------------------------------")
+        logger.debug("----------------------------------------------")
         title_value = row[r_title_idx].value.encode('utf-8')
-        print("RESTRICTION Requested\n%s\n         --  %s" %(r_name, title_value))
+        logger.debug("RESTRICTION Requested\n%s\n         --  %s" %(r_name, title_value))
         s_id = row[r_id_idx].value
 
         # If the ID needs to be assigned...
@@ -113,22 +108,32 @@ def matchIds(submissions, restrictions):
             s_name = vireoName( r_name )
 
             matches = submissions.matchingRows(VireoSheet.STUDENT_NAME, s_name)
-            m = choose(matches, submissions, [VireoSheet.STUDENT_NAME, VireoSheet.DOCUMENT_TITLE])
+            m = choose(matches, submissions, [VireoSheet.STUDENT_NAME, VireoSheet.DOCUMENT_TITLE], logger)
 
             if (len(matches) > 0 and m != None):
                 row[r_id_idx].value = m[0].value
-                print("The ID %s was matched" % (m[0].value))
+                logger.debug("The ID %s was matched" % (m[0].value))
             else:
-                print("No ID matches were for found for %s" % (s_name))
+                logger.debug("No ID matches were for found for %s" % (s_name))
 
-            print("--")
+            logger.debug("--")
         else:
+            pdb.set_trace()
             match = submissions.id_rows[int(s_id)][0]
-            print("\nMATCHED Submission")
-            print("\n         --  ".join([str(match[id].value) for id in s_col_ids]))
+            logger.info("\nMATCHED Submission")
+            logger.info("\n         --  ".join([str(match[id].value) for id in s_col_ids]))
             raw_input("\nENTER to continue > ")
-    print("----------------------------------------------")
-    save(restrictions)
+    logger.debug("----------------------------------------------")
+    save(restrictions, logger)
+
+def build_logger(loglevel):
+    logger = logging.getLogger('dspace.restrictionsFindIds')
+    logger.setLevel(loglevel)
+    console_handler = logging.StreamHandler()
+    console_handler.setLevel(loglevel)
+    logger.addHandler(console_handler)
+
+    return logger
 
 def main():
 
@@ -136,8 +141,7 @@ def main():
         parser = ArgParser.create()
         args = parser.parse_args()
 
-        logging.getLogger().setLevel(args.loglevel)
-        logging.basicConfig()
+        logger = build_logger(args.loglevel)
 
         submissions = VireoSheet.createFromExcelFile(args.thesis)
         submissions.col_index_of(VireoSheet.MULTI_AUTHOR)
@@ -146,11 +150,11 @@ def main():
         restrictions = submissions.readRestrictions(args.restrictions, check_id=False)
         restrictions.log_info()
 
-        matchIds(submissions, restrictions)
+        matchIds(submissions, restrictions, logger)
 
     except Exception as e:
-        logging.error(e)
-        logging.debug(traceback.format_exc())
+        logger.error(e)
+        logger.debug(traceback.format_exc())
         sys.exit(1)
 
 if __name__ == "__main__":

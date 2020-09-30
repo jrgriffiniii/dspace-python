@@ -1,5 +1,3 @@
-build/doctrees
-build/html
-thesiscentral-vireo/dataspace/python/export/*
-!thesiscentral-vireo/dataspace/python/export/.keep
-~$*.xlsx
+
+thesiscentral-vireo/dataspace/python/export
+thesiscentral-vireo/dataspace/python/export-master

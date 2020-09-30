@@ -1,0 +1,30 @@
+#!/bin/tcsh -e
+
+cd "export/$department"
+rm "$department.tgz"
+
+if ( -d Multi-Author ) then
+  tar \
+    --create \
+    --file="$department.tgz" \
+    --gzip \
+    --verbose \
+    --exclude=DSpaceSimpleArchive/ \
+    --exclude=DSpaceSimpleArchive.zip \
+    --exclude="$department.tgz" \
+  .
+
+else
+  tar \
+    --create \
+    --file="$department.tgz" \
+    --gzip \
+    --verbose \
+    --exclude=DSpaceSimpleArchive/ \
+    --exclude=DSpaceSimpleArchive.zip \
+    --exclude="$department.tgz" \
+  .
+
+endif
+
+cd -

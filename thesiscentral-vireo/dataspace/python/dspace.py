@@ -11,21 +11,43 @@ import sys
 
 from enhanceAips import VireoSheet, EnhanceAips
 from sortByStatus import SortByStatus
+from restrictionsFindIds import matchIds
+
+from lib.dspace import *
 
 def generate_package(
         department,
-
         thesis,
         add_certs,
         restrictions,
         aips,
         cover_page,
-
-        loglevel,
-
-        ):
+        loglevel
+    ):
     """
+    Generates a DSpace simple archive package.
 
+    Attributes
+    ----------
+    department : string
+        The name of the department
+    thesis : string
+        The path to the Vireo metadata spreadsheet export
+    add_certs : string
+        Foo
+    restrictions : string
+        The path to the restrictions Excel spreadsheet
+    aips : string
+        The path to the .zip
+    cover_page : string
+        The path to the cover page PDF
+    loglevel : int
+        The level of the logging
+
+    Returns
+    -------
+    bool
+        Whether or not the package was successfully created
     """
     logging.getLogger().setLevel(loglevel)
     logging.basicConfig()
@@ -65,105 +87,6 @@ def generate_package(
 
     return True
 
-def generate_directory_name(department):
-    value = None
-    value = department.lower()
-    value = value.replace(' ', '_')
-    value = value.replace('&', 'and')
-
-    return value
-
-def build_directory_path(department):
-    dir_name = generate_directory_name(department)
-    path = Path( 'export', dir_name)
-
-    return path
-
-def find_vireo_spreadsheet(department):
-    dir_path = build_directory_path(department)
-    path = dir_path.joinpath('ExcelExport.xlsx')
-
-    return path
-
-def find_restrictions_spreadsheet(department):
-    dir_path = build_directory_path(department)
-    path = dir_path.joinpath('RestrictionsWithId.xlsx')
-
-    return path
-
-def find_vireo_dspace_package(department):
-    dir_path = build_directory_path(department)
-    path = dir_path.joinpath('DSpaceSimpleArchive.zip')
-
-    return path
-
-def find_cover_page():
-    path = Path('export', 'SeniorThesisCoverPage.pdf')
-
-    return path
-
-def find_programs_spreadsheet(department):
-    dir_path = build_directory_path(department)
-    path = dir_path.joinpath('AdditionalPrograms.xlsx')
-
-    return path
-
-def find_authorizations_spreadsheet(department):
-    dir_path = build_directory_path(department)
-    path = dir_path.joinpath('ImportRestrictions.xlsx')
-
-    return path
-
-def extract_dspace_export(department):
-
-    dir_path = build_directory_path(department)
-    zip_file_path = dir_path.joinpath('DSpaceSimpleArchive.zip')
-
-    with zipfile.ZipFile(str(zip_file_path), "r") as zip_ref:
-        zip_ref.extractall(str(dir_path))
-
-    return True
-
-def prepare_files(department):
-    """
-
-    """
-
-    dir_path = build_directory_path(department)
-    if not dir_path.exists():
-        os.mkdir(str(dir_path))
-
-    dir_name = generate_directory_name(department)
-
-    dept_package_path = dir_path.joinpath('DSpaceSimpleArchive.zip')
-    if not dept_package_path.exists():
-        export_package_path = Path('thesiscentral-exports', 'dspace_packages', '%s.zip'.format(dir_name))
-        shutil.copy(export_package_path, dept_package_path)
-
-    extract_dspace_export(department)
-
-    dept_metadata_path = dir_path.joinpath('ExcelExport.xlsx')
-    if not dept_metadata_path.exists():
-        export_metadata_path = Path('thesiscentral-exports', 'metadata', '%s.xlsx'.format(dir_name))
-        shutil.copy(export_metadata_path, dept_metadata_path)
-
-    dept_authorizations_path = dir_path.joinpath('RestrictionsWithId.xlsx')
-    if not dept_authorizations_path.exists():
-        root_authorizations_path = Path('export', 'RestrictionsWithId.xlsx')
-        shutil.copy(root_authorizations_path, dept_authorizations_path)
-
-    dept_restrictions_path = dir_path.joinpath('ImportRestrictions.xlsx')
-    if not dept_restrictions_path.exists():
-        root_restrictions_path = Path('export', 'ImportRestrictions.xlsx')
-        shutil.copy(root_restrictions_path, dept_restrictions_path)
-
-    dept_programs_path = dir_path.joinpath('AdditionalPrograms.xlsx')
-    if not dept_programs_path.exists():
-        root_programs_path = Path('export', 'AdditionalPrograms.xlsx')
-        shutil.copy(root_programs_path, dept_programs_path)
-
-    return True
-
 def update_package_metadata(department):
 
     dir_path = build_directory_path(department)
@@ -180,7 +103,9 @@ def update_package_metadata(department):
     return True
 
 @click.group()
-@click.option('--department',
+@click.option('-d',
+                '--department',
+                required=True,
                 prompt='Department',
                 help='The department being exported')
 
@@ -199,6 +124,51 @@ def cli(ctx, department):
 
 @cli.command()
 @click.pass_context
+def init_package(ctx):
+    """
+    """
+
+    department = ctx.obj['DEPARTMENT']
+    force_file_updates = True
+
+    dir_path = build_directory_path(department)
+    if not dir_path.exists():
+        os.mkdir(str(dir_path))
+
+    dir_name = generate_directory_name(department)
+
+    dept_package_path = dir_path.joinpath('DSpaceSimpleArchive.zip')
+    if not dept_package_path.exists():
+        export_package_path = Path('thesiscentral-exports', 'dspace_packages', '{}.zip'.format(dir_name))
+        shutil.copy(str(export_package_path), str(dept_package_path))
+
+    extract_dspace_export(department)
+
+    dept_metadata_path = dir_path.joinpath('ExcelExport.xlsx')
+    if not dept_metadata_path.exists():
+        export_metadata_path = Path('thesiscentral-exports', 'metadata', '{}.xlsx'.format(dir_name))
+        shutil.copy(str(export_metadata_path), str(dept_metadata_path))
+
+    dept_authorizations_path = dir_path.joinpath('RestrictionsWithId.xlsx')
+    if force_file_updates or not dept_authorizations_path.exists():
+        root_authorizations_path = Path('export', 'RestrictionsWithId.xlsx')
+        shutil.copy(str(root_authorizations_path), str(dept_authorizations_path))
+
+    dept_restrictions_path = dir_path.joinpath('ImportRestrictions.xlsx')
+    if force_file_updates or not dept_authorizations_path.exists():
+        root_restrictions_path = Path('export', 'ImportRestrictions.xlsx')
+        shutil.copy(str(root_restrictions_path), str(dept_restrictions_path))
+
+    dept_programs_path = dir_path.joinpath('AdditionalPrograms.xlsx')
+    if not dept_programs_path.exists():
+        root_programs_path = Path('export', 'AdditionalPrograms.xlsx')
+        shutil.copy(str(root_programs_path), str(dept_programs_path))
+
+    return True
+
+
+@cli.command()
+@click.pass_context
 def compress_package(ctx):
     """
     """
@@ -207,7 +177,7 @@ def compress_package(ctx):
 
     dir_path = build_directory_path(department)
     tar_file_name = generate_directory_name(department)
-    tar_file_path = dir_path.joinpath(tar_file_name)
+    tar_file_path = dir_path.joinpath('{}.tgz'.format(tar_file_name))
 
     tar_file = tarfile.open(name=str(tar_file_path), mode='w:gz')
 
@@ -232,24 +202,48 @@ def compress_package(ctx):
 
 @cli.command()
 @click.pass_context
-def export_department(ctx):
+def audit_restrictions(ctx):
+
+    department = ctx.obj['DEPARTMENT']
+
+    dept_metadata_path = find_vireo_spreadsheet(department)
+
+    submissions = VireoSheet.createFromExcelFile(str(dept_metadata_path))
+    submissions.col_index_of(VireoSheet.MULTI_AUTHOR)
+    submissions.log_info()
+
+    root_authorizations_path = Path('export', 'RestrictionsWithId.xlsx')
+    restrictions = submissions.readRestrictions(str(root_authorizations_path), check_id=False)
+    restrictions.log_info()
+
+    loglevel = logging.INFO
+    logger = build_logger(loglevel)
+
+    matchIds(submissions, restrictions, logger)
+
+@cli.command()
+@click.pass_context
+def build_package(ctx):
     """
 
     """
 
     department = ctx.obj['DEPARTMENT']
 
+    status = ctx.forward(audit_restrictions)
+
+    # This needs to be a CLI argument
+    loglevel = logging.INFO
+    logger = build_logger(loglevel)
+
+    status = ctx.forward(init_package)
+
     thesis = find_vireo_spreadsheet(department)
     aips = build_directory_path(department)
 
     add_certs = find_programs_spreadsheet(department)
-    restrictions = find_restrictions_spreadsheet(department)
+    restrictions = find_authorizations_spreadsheet(department)
     cover_page = find_cover_page()
-
-    prepare_files(department)
-
-    # This needs to be a CLI argument
-    loglevel=logging.INFO
 
     # Generate the SIP
     status = generate_package(
@@ -266,7 +260,7 @@ def export_department(ctx):
 
     status = update_package_metadata(department)
 
-    status = compress_package(department)
+    status = ctx.forward(compress_package)
 
     return status
 
