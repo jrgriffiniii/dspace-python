@@ -160,7 +160,8 @@ class VireoSheet:
             'Check Thesis Uploaded',
             'SetFormLink',
             'Item Type',
-            'Path'
+            'Path',
+            'ID'
         ]
 
         for col in columns:
@@ -176,8 +177,8 @@ class VireoSheet:
                     column = columns[cell_index - 1]
 
                     # @todo investigate why this is breaking pandas
-                    if cell_index == 22:
-                        continue
+                    # if cell_index == 22:
+                    #     continue
 
                     dataset[column].append(cell.value)
                     cell_index += 1

@@ -3,3 +3,7 @@ downloads/
 export/
 thesiscentral-exports/
 tmp/
+~$*.xlsx
+_build
+!_build/.keep
+

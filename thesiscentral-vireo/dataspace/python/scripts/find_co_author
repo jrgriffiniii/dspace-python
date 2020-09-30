@@ -1,0 +1,21 @@
+#!/bin/tcsh
+echo "===="
+set dir = $1
+echo  "$dir"
+
+echo "Approved AUTHOR:"
+fgrep -A 1 author $dir/dublin_core.xml | tail -1
+echo ""
+
+echo "check at URL ..."
+echo "https://dataspace.princeton.edu/www/thesis_central/Multi-Author/$dir"
+chmod o+r $dir/*.pdf
+echo -n "done ? "
+set t = $<
+chmod o-r $dir/*.pdf
+echo ""
+
+echo "Co- AUTHORS in submission subdirectories:"
+foreach sub ("$dir"/subm*)
+  fgrep -A 1 author $sub/dublin_core.xml | tail -1
+end

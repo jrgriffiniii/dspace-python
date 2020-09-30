@@ -20,7 +20,7 @@ jobs:
           command: |
             sudo pip install pipenv
             if [[ $(python --version 2>&1) =~ 2\.7\. ]]; then
-              cp Pipfile.legacy Pipfile
+              cp Pipfile2.7 Pipfile
             fi
             pipenv lock --pre
             pipenv install --skip-lock
@@ -48,7 +48,7 @@ jobs:
           command: |
             sudo pip install pipenv
             if [[ $(python --version 2>&1) =~ 2\.7\. ]]; then
-              cp Pipfile.legacy Pipfile
+              cp Pipfile2.7 Pipfile
             fi
             pipenv lock --pre
             pipenv install --skip-lock
@@ -82,7 +82,7 @@ jobs:
           command: |
             sudo pip install pipenv
             if [[ $(python --version 2>&1) =~ 2\.7\. ]]; then
-              cp Pipfile.legacy Pipfile
+              cp Pipfile2.7 Pipfile
             fi
             pipenv lock --pre
             pipenv install --skip-lock
@@ -116,7 +116,7 @@ jobs:
           command: |
             sudo pip install pipenv
             if [[ $(python --version 2>&1) =~ 2\.7\. ]]; then
-              cp Pipfile.legacy Pipfile
+              cp Pipfile2.7 Pipfile
             fi
             pipenv lock --pre
             pipenv install --skip-lock
@@ -124,6 +124,120 @@ jobs:
           name: 'Run the Python unit and module tests'
           command: |
             echo 'no op'
+      - save_cache:
+          key: pip-packages-<< parameters.python_version >>-{{ .Branch }}-{{ checksum "Pipfile.lock" }}
+          paths:
+            - ~/.local/share/virtualenvs/venv
+
+  build_thesis_central:
+    parameters:
+      python_version:
+        type: string
+        default: '2.7'
+    working_directory: ~/dspace-python/thesiscentral-vireo/dataspace/python
+    docker:
+      - image: circleci/python:<< parameters.python_version >>-node-browsers-legacy
+    steps:
+      - checkout
+      - restore_cache:
+          name: Restore the cache
+          keys:
+            - pip-packages-<< parameters.python_version >>-{{ .Branch }}-{{ checksum "Pipfile.lock" }}
+      - run:
+          name: 'Install package dependencies using pipenv'
+          command: |
+            sudo pip install pipenv
+            pipenv lock --pre
+            pipenv install --skip-lock --dev
+      - save_cache:
+          key: pip-packages-<< parameters.python_version >>-{{ .Branch }}-{{ checksum "Pipfile.lock" }}
+          paths:
+            - ~/.local/share/virtualenvs/venv
+
+  lint_thesis_central:
+    parameters:
+      python_version:
+        type: string
+        default: '2.7'
+    working_directory: ~/dspace-python/thesiscentral-vireo/dataspace/python
+    docker:
+      - image: circleci/python:<< parameters.python_version >>-node-browsers-legacy
+    steps:
+      - checkout
+      - restore_cache:
+          name: Restore the cache
+          keys:
+            - pip-packages-<< parameters.python_version >>-{{ .Branch }}-{{ checksum "Pipfile.lock" }}
+      - run:
+          name: 'Install package dependencies using pipenv'
+          command: |
+            sudo pip install pipenv
+            pipenv lock --pre
+            pipenv install --skip-lock --dev
+      - run:
+          name: 'Lint the Python source files'
+          command: |
+            pipenv run pylint
+      - save_cache:
+          key: pip-packages-<< parameters.python_version >>-{{ .Branch }}-{{ checksum "Pipfile.lock" }}
+          paths:
+            - ~/.local/share/virtualenvs/venv
+
+  doc_thesis_central:
+    parameters:
+      python_version:
+        type: string
+        default: '2.7'
+    working_directory: ~/dspace-python/thesiscentral-vireo/dataspace/python
+    docker:
+      - image: circleci/python:<< parameters.python_version >>-node-browsers-legacy
+    steps:
+      - checkout
+      - restore_cache:
+          name: Restore the cache
+          keys:
+            - pip-packages-<< parameters.python_version >>-{{ .Branch }}-{{ checksum "Pipfile.lock" }}
+      - run:
+          name: 'Install package dependencies using pipenv'
+          command: |
+            sudo pip install pipenv
+            pipenv lock --pre
+            pipenv install --skip-lock --dev
+      - run:
+          name: 'Generate the code documentation'
+          command: |
+            pipenv run sphinx-build -b html source build/html
+      - save_cache:
+          key: pip-packages-<< parameters.python_version >>-{{ .Branch }}-{{ checksum "Pipfile.lock" }}
+          paths:
+            - ~/.local/share/virtualenvs/venv
+      - store_artifacts:
+          path: ~/dspace-python/build/html
+
+  test_thesis_central:
+    parameters:
+      python_version:
+        type: string
+        default: '2.7'
+    working_directory: ~/dspace-python/thesiscentral-vireo/dataspace/python
+    docker:
+      - image: circleci/python:<< parameters.python_version >>-node-browsers-legacy
+    steps:
+      - checkout
+      - restore_cache:
+          name: Restore the cache
+          keys:
+            - pip-packages-<< parameters.python_version >>-{{ .Branch }}-{{ checksum "Pipfile.lock" }}
+      - run:
+          name: 'Install package dependencies using pipenv'
+          command: |
+            sudo pip install pipenv
+            pipenv lock --pre
+            pipenv install --skip-lock --dev
+      - run:
+          name: 'Run the Python unit and module tests'
+          command: |
+            pipenv run pytest
       - save_cache:
           key: pip-packages-<< parameters.python_version >>-{{ .Branch }}-{{ checksum "Pipfile.lock" }}
           paths:
@@ -169,4 +283,25 @@ workflows:
           python_version: '2.7'
           requires:
             - lint-python2.7
+
+  thesis_central:
+    jobs:
+      - build_thesis_central:
+          name: build-thesis-central2.7
+          python_version: '2.7'
+      - lint_thesis_central:
+          name: lint-thesis-central2.7
+          python_version: '2.7'
+          requires:
+            - build-thesis-central2.7
+      - doc_thesis_central:
+          name: doc-thesis-central2.7
+          python_version: '2.7'
+          requires:
+            - build-thesis-central2.7
+      - test_thesis_central:
+          name: test-thesis-central2.7
+          python_version: '2.7'
+          requires:
+            - lint-thesis-central2.7
 

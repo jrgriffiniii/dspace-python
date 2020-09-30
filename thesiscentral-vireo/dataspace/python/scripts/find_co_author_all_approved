@@ -1,0 +1,13 @@
+#!/bin/tcsh
+
+set HERE = `dirname $0`
+set HERE = `realpath  $HERE`
+
+echo cd /dspace/www/thesis_central/Multi-Author/
+cd /dspace/www/thesis_central/Multi-Author/
+foreach dir (Approved/*/Approved/submission_*)
+  echo $HERE/find_co_author "'$dir'"
+  echo "echo ''"
+  echo "echo ''"
+  echo ""
+end

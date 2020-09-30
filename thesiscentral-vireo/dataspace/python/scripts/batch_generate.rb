@@ -3,6 +3,7 @@
 require 'pathname'
 require 'pry-byebug'
 require 'logger'
+require 'open3'
 
 def logger
   @logger ||= begin
@@ -25,24 +26,42 @@ def generate_sip(department_dir_name, spreadsheet)
   restrict_cmd = <<-BASH
   pipenv run python restrictionsFindIds.py --thesis "export/#{department_dir_name}/ExcelExport.xlsx" --restrictions "export/#{department_dir_name}/RestrictionsWithId.xlsx"
   BASH
-  logger.info "Applying the restrictions..."
-  `#{restrict_cmd}`
+  # logger.info "Applying the restrictions..."
+  # `#{restrict_cmd}`
 
   `cd "export/#{department_dir_name}" && unzip DSpaceSimpleArchive.zip; cd -`
 
-  build_sip = <<-BASH
+  build_sip_cmd = <<-BASH
   pipenv run python enhanceAips.py --thesis "export/#{department_dir_name}/ExcelExport.xlsx" -r "export/#{department_dir_name}/RestrictionsWithId.xlsx" --cover_page export/SeniorThesisCoverPage.pdf --add_certs "export/#{department_dir_name}/AdditionalPrograms.xlsx" --aips "export/#{department_dir_name}" -l INFO
   BASH
   logger.info "Generating the SIP..."
-  `#{build_sip}`
+  puts "Please run this in another terminal: #{build_sip_cmd}"
+  binding.pry
 
-  sort_sips = <<-BASH
+  Open3.popen2(build_sip_cmd) do |stdin, stdout, status_thread|
+    stdout.each_line do |line|
+      puts line
+    end
+
+    raise "Failed to build the SIP"  unless status_thread.value.success?
+  end
+  
+  sort_sips_cmd = <<-BASH
   pipenv run python sortByStatus.py  --thesis "export/#{department_dir_name}/ExcelExport.xlsx" --aips "export/#{department_dir_name}"
   BASH
-  # logger.info "Sorting the SIPs..."
-  #`#{sort_sips}`
+
+  logger.info "Sorting the SIPs..."
+  Open3.popen2(sort_sips_cmd) do |stdin, stdout, status_thread|
+    stdout.each_line do |line|
+      puts line
+    end
+
+    raise "Failed to clean the SIP metadata"  unless status_thread.value.success?
+  end
+  # `#{sort_sips}`
 
   tar_cmd = <<-BASH
+  cd "export/#{department_dir_name}"
   tar \
     --create \
     --file="#{department_dir_name}.tgz" \
@@ -55,7 +74,16 @@ def generate_sip(department_dir_name, spreadsheet)
   BASH
 
   logger.info "Compressing the SIP..."
-  `cd "export/#{department_dir_name}" && rm "#{department_dir_name}.tgz" && #{tar_cmd}; cd -`
+  Open3.popen2(tar_cmd) do |stdin, stdout, status_thread|
+    stdout.each_line do |line|
+      puts line
+    end
+
+    raise "Failed to compess the SIP"  unless status_thread.value.success?
+  end
+
+  # `cd "export/#{department_dir_name}" && rm "#{department_dir_name}.tgz" && #{tar_cmd}; cd -`
+  # `cd "export/#{department_dir_name}" && #{tar_cmd}`
 end
 
 def find_spreadsheet(normal_department_name)
@@ -81,9 +109,10 @@ def departments
     "German"
   ]
 
-
   [
-    "Religion"
+    "Sociology",
+    "Slavic Languages and Literatures",
+    "Psychology"
   ]
 end
 

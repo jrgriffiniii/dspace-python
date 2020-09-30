@@ -78,6 +78,7 @@ class SortByStatus():
 
                 if not os.path.exists(new_dir):
                     shutil.move(cur_dir, new_dir)
+
             except Exception as inst:
                 import pdb; pdb.set_trace()
                 pass
