@@ -14,6 +14,7 @@ openpyxl = "*"
 pandas = "*"
 click = "*"
 pathlib2 = "*"
+xlrd = "*"
 
 [requires]
 python_version = "2.7"
