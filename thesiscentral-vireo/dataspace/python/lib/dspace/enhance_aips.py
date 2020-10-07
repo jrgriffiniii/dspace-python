@@ -9,13 +9,7 @@ import sys
 from shutil import copyfile
 import pdb
 
-# for the benefit of IDE import two ways
-try:
-    from vireo import VireoSheet
-except Exception as import_error:
-    pdb.set_trace()
-    from . import vireo
-    from vireo import VireoSheet
+from ..vireo import VireoSheet
 
 class ArgParser(argparse.ArgumentParser):
     @staticmethod
@@ -155,7 +149,7 @@ class EnhanceAips:
             if sub[status_idx] in EnhanceAips.EXPORT_STATUS and sub[multi_idx]:
                 logging.warning("submission: %d: skipping multi author thesis" % (sub[idx]))
 
-    def addCertiticates(self, moreCerts):
+    def addCertificates(self, moreCerts):
         idx = self.submissions.col_index_of(VireoSheet.ID)
         cp_idx = self.submissions.col_index_of(VireoSheet.CERTIFICATE_PROGRAM)
         more_cp_idx = moreCerts.col_index_of(VireoSheet.CERTIFICATE_PROGRAM)
@@ -428,10 +422,11 @@ def main():
     try:
         enhancer = EnhanceAips(submissions, args.aips, args.cover_page)
 
-        enhancer.addCertiticates(moreCerts)
+        enhancer.addCertificates(moreCerts)
         enhancer.addRestrictions(restrictions)
         enhancer.print_table(file=sys.stdout)
         enhancer.adjust_aips()
+
         if (enhancer.error > 0):
             raise RuntimeError("%s errors" % enhancer.error)
         sys.exit(0)

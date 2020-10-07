@@ -1,4 +1,3 @@
-
 import logging
 from pathlib2 import Path
 import os

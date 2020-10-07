@@ -1,7 +1,6 @@
 from lxml import etree as ET
 
 import argparse
-
 import datetime
 import logging
 import traceback
@@ -9,11 +8,7 @@ import os
 import shutil
 import sys
 
-# for the benefit of IDE import two ways
-try:
-    from vireo import VireoSheet
-except Exception:
-    from .vireo import VireoSheet
+from ..vireo import VireoSheet
 
 class ArgParser(argparse.ArgumentParser):
     @staticmethod
@@ -38,10 +33,18 @@ based on a submission status,  move submission aip directoies into sub-directori
         return args
 
 class SortByStatus():
+
+    @staticmethod
+    def build_logger():
+        logger = logging.getLogger()
+        logger.setLevel(logging.DEBUG)
+
+        return logger
+
     def __init__(self, submissions, aip_dir):
         self.error = 0
-        self.aip_dir = aip_dir
         self.submissions = submissions
+        self.aip_dir = aip_dir
 
     def sort_by_status(self):
         """
@@ -56,32 +59,38 @@ class SortByStatus():
         department_idx = self.submissions.col_index_of(VireoSheet.DEPARTMENT)
         multi_author_idx = self.submissions.col_index_of(VireoSheet.MULTI_AUTHOR)
 
+        logger = SortByStatus.build_logger()
+
         for sub_id in self.submissions.id_rows:
-            vals = VireoSheet.row_values(self.submissions.id_rows[sub_id][0])
-            sub_id = int(float(vals[idx]))
-            if (vals[multi_author_idx].upper() == "YES"):
-                subdir = 'Multi-Author'
-            else:
-                subdir = ''
+            cells = self.submissions.id_rows[sub_id]
+            vals = VireoSheet.row_values(cells[0])
+
+            id_cell_value = float(vals[idx])
+            sub_id = int(id_cell_value)
 
             # This uses the "Status" value in the new subdirectory name
-            status_subdir = subdir + "/" + vals[status_idx].replace(' ', '-')
-            dept = vals[department_idx]
+            status_value = vals[status_idx].replace(' ', '-')
 
-            sub_dir_name = "%s/%s" % ( self.aip_dir, status_subdir)
+            multi_author = vals[multi_author_idx]
 
-            try:
-                if not os.path.exists(sub_dir_name):
-                    os.makedirs(sub_dir_name)
-                cur_dir = "%s/DSpaceSimpleArchive/submission_%d" % (self.aip_dir, sub_id)
-                new_dir = "%s/submission_%d" % (sub_dir_name, sub_id)
+            if (multi_author.upper() == "YES"):
+                sub_dir_name = os.path.join(self.aip_dir, 'Multi-Author', status_value)
+            else:
+                sub_dir_name = os.path.join(self.aip_dir, status_value)
 
-                if not os.path.exists(new_dir):
-                    shutil.move(cur_dir, new_dir)
+            if not os.path.exists(sub_dir_name):
+                os.makedirs(sub_dir_name)
 
-            except Exception as inst:
-                import pdb; pdb.set_trace()
-                pass
+            submission_dir_name = "submission_{}".format(sub_id)
+            vireo_export_dir = os.path.join(self.aip_dir, 'DSpaceSimpleArchive', submission_dir_name)
+            dspace_package_dir = os.path.join(sub_dir_name, submission_dir_name)
+
+            logger.info("Processing {} for {}...".format(sub_id, vireo_export_dir))
+
+            if not os.path.exists(dspace_package_dir):
+                shutil.move(vireo_export_dir, dspace_package_dir)
+
+            logger.info("Processed {} into {}...".format(sub_id, dspace_package_dir))
 
 def main():
     try:

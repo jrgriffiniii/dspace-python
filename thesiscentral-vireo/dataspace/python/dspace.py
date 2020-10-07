@@ -1,18 +1,21 @@
 import click
 import logging
-from pathlib2 import Path
 import os
-import shutil
-import zipfile
-import tarfile
-
+from pathlib2 import Path
 import pdb
+import shutil
 import sys
+import tarfile
+import zipfile
 
-from enhanceAips import VireoSheet, EnhanceAips
-from sortByStatus import SortByStatus
-from restrictionsFindIds import matchIds
+from lib.vireo.submission import PDFDocument
 
+from lib.dspace.enhance_aips import VireoSheet, EnhanceAips
+from lib.dspace.package import PackageCollection
+from lib.dspace.restrictions import matchIds
+from lib.dspace.sort import SortByStatus
+
+# This is for the global functions - this should be refactored
 from lib.dspace import *
 
 def generate_package(
@@ -77,7 +80,7 @@ def generate_package(
 
     enhancer = EnhanceAips(submissions, aips, cover_page)
 
-    enhancer.addCertiticates(moreCerts)
+    enhancer.addCertificates(moreCerts)
     enhancer.addRestrictions(restrictions)
     enhancer.print_table(file=sys.stdout)
     enhancer.adjust_aips()
@@ -150,9 +153,12 @@ def init_package(ctx):
         shutil.copy(str(export_metadata_path), str(dept_metadata_path))
 
     dept_authorizations_path = dir_path.joinpath('RestrictionsWithId.xlsx')
-    if force_file_updates or not dept_authorizations_path.exists():
-        root_authorizations_path = Path('export', 'RestrictionsWithId.xlsx')
-        shutil.copy(str(root_authorizations_path), str(dept_authorizations_path))
+    # This needs to be a forced update if audit_restrictions has already been invoked
+    if dept_authorizations_path.exists():
+        os.remove(str(dept_authorizations_path))
+
+    root_authorizations_path = Path('export', 'RestrictionsWithId.xlsx')
+    shutil.copy(str(root_authorizations_path), str(dept_authorizations_path))
 
     dept_restrictions_path = dir_path.joinpath('ImportRestrictions.xlsx')
     if force_file_updates or not dept_authorizations_path.exists():
@@ -166,6 +172,13 @@ def init_package(ctx):
 
     return True
 
+@cli.command()
+@click.pass_context
+def regenerate_pdfs(ctx):
+    department = ctx.obj['DEPARTMENT']
+
+    collection = PackageCollection.build(department)
+    collection.regenerate_pdfs()
 
 @cli.command()
 @click.pass_context
@@ -181,8 +194,15 @@ def compress_package(ctx):
 
     tar_file = tarfile.open(name=str(tar_file_path), mode='w:gz')
 
-    sip_dir_path = dir_path.joinpath('Approved')
-    tar_file.add(str(sip_dir_path))
+    # This varies depending upon the structure of the Vireo export
+    multi_author_dir_path = dir_path.joinpath('Multi-Author', 'Approved')
+    approved_dir_path = dir_path.joinpath('Approved')
+
+    if multi_author_dir_path.exists():
+        tar_file.add(str(multi_author_dir_path))
+
+    if approved_dir_path.exists():
+        tar_file.add(str(approved_dir_path))
 
     metadata_path = find_vireo_spreadsheet(department)
     tar_file.add(str(metadata_path))
@@ -223,6 +243,19 @@ def audit_restrictions(ctx):
 
 @cli.command()
 @click.pass_context
+def rebuild_package_metadata(ctx):
+    department = ctx.obj['DEPARTMENT']
+
+    # This needs to be a CLI argument
+    loglevel = logging.INFO
+    logger = build_logger(loglevel)
+
+    status = update_package_metadata(department)
+
+    return status
+
+@cli.command()
+@click.pass_context
 def build_package(ctx):
     """
 
@@ -248,13 +281,11 @@ def build_package(ctx):
     # Generate the SIP
     status = generate_package(
         department,
-
         str(thesis),
         str(add_certs),
         str(restrictions),
         str(aips),
         str(cover_page),
-
         loglevel
     )
 
