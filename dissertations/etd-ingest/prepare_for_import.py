@@ -8,6 +8,7 @@ import zipfile
 import traceback
 from lxml import etree, builder
 import datetime
+import shutil
 
 UMI_to_DSPACE = "proquest_configs/UMI_to_DSpaceDC.xsl"
 COLLECTION_MAP = "proquest_configs/collection_map.xml"
@@ -59,6 +60,8 @@ def do_dissertations(dir_name, unzip_dir):
                                                                                        reject_dir))
                 if dname:
                     to = "{}/{}".format(reject_dir, os.path.basename(dname))
+                    if os.path.isdir(to):
+                        shutil.rmtree(to)
                     os.rename(dname, to)
                 else:
                     os.rename(z, '{}/{}'.format(reject_dir, os.path.basename(z)))
@@ -244,13 +247,16 @@ def _get_dir(dname, sub_dir):
 
 def _create_dirs(name):
     try:
-        os.mkdir(name)
-        print("create: " + name)
+        if not os.path.isdir(name):
+            os.mkdir(name)
+            print("create: " + name)
         for d in [SUCCESS_DIR, REJECT_DIR]:
             d_dir = _get_dir(name, d)
-            os.mkdir(d_dir)
-            print("create: " + d_dir)
+            if not os.path.isdir(d_dir):
+                os.mkdir(d_dir)
+                print("create: " + d_dir)
     except Exception as e:
+        eprint(e)
         eprint("ERROR: could not create {}".format(name))
         return None
     return True

@@ -1,0 +1,29 @@
+#!/bin/bash
+
+if [ -z "$1" ]; then
+  echo "No batch date supplied, please use the format of the first three letters of the month with the day without zero padding (e. g. Feb 5)"
+  exit 1
+fi
+
+export BATCH_DATE=$1
+echo $BATCH_DATE
+
+export DEST_DIR=$2
+echo $DEST_DIR
+
+export FILE_NAMES="lcd $DEST_DIR\n"
+while read file_entry; do
+  export FILE_FIELDS=`echo "$file_entry" | awk 'BEGIN { FS = " " } ; { print $6,$7,$8,$9 }'`
+  export UPLOAD_DATE=`echo $FILE_FIELDS | awk 'BEGIN { FS = " " } ; { print $1,$2 }'`
+
+  if [[ $UPLOAD_DATE == $BATCH_DATE ]]; then
+    export FILE_NAME=`echo $FILE_FIELDS | awk 'BEGIN { FS = " " } ; { print $4 }'`
+    echo "Copying $FILE_NAME..."
+    FILE_NAMES+="mget $FILE_NAME\n"
+  fi
+done < import_files.txt
+
+if [[ "$FILE_NAMES" != "" ]]; then
+  echo -e "$FILE_NAMES"
+  echo -e "$FILE_NAMES" | sftp -P $PROQUEST_PROXY_PORT dspace@localhost
+fi
