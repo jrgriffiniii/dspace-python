@@ -9,6 +9,8 @@ import traceback
 from lxml import etree, builder
 import datetime
 import shutil
+import codecs
+import pdb
 
 UMI_to_DSPACE = "proquest_configs/UMI_to_DSpaceDC.xsl"
 COLLECTION_MAP = "proquest_configs/collection_map.xml"
@@ -66,8 +68,6 @@ def do_dissertations(dir_name, unzip_dir):
                 else:
                     os.rename(z, '{}/{}'.format(reject_dir, os.path.basename(z)))
 
-            print('')
-
         print("SUCCESS on {} dissertations".format(nsuccess))
         print("REJECT for {} dissertations".format(nreject))
         print('')
@@ -77,24 +77,32 @@ def do_dissertations(dir_name, unzip_dir):
             print("ERROR: this SHOULD NEVER HAPPEN nuccess{} + nreject{} != total{}".format(nsuccess, nreject, i))
             return 1
         if (nreject == 0):
-            os.rmdir(reject_dir)
+            shutil.rmtree(reject_dir)
             print("delete " + reject_dir)
         return nreject
 
+def unzip_dissertation(i, export_file_path, unzip_dir):
+    # Copy the original ZIP file
+    zip_file_path = "{}.export.zip".format(export_file_path)
+    shutil.copyfile(export_file_path, zip_file_path)
 
-def unzip_dissertation(i, z, unzip_dir):
-    dname = os.path.basename(z).split('.')[0]
+    dname = os.path.basename(zip_file_path).split('.')[0]
     dname = '{}/{}'.format(unzip_dir, dname)
-    print("#{} unzip {} to {}".format(i, z, dname))
+    print("#{} unzip {} to {}".format(i, zip_file_path, dname))
+
     try:
-        os.mkdir(dname)
-        zip_ref = zipfile.ZipFile(z, 'r')
+        if os.path.isdir(dname):
+            pass
+        else:
+            os.mkdir(dname)
+
+        zip_ref = zipfile.ZipFile(zip_file_path, 'r')
         zip_ref.extractall(dname)
+
         return dname
     except Exception as e:
-        eprint("#{} ERROR could not unzip {} to {}: {}".format(i, z, dname, str(e)))
+        eprint("#{} ERROR could not unzip {} to {}: {}".format(i, zip_file_path, dname, str(e)))
         return None
-
 
 def generate_dublincore(i, dname, data_xml):
     if not data_xml: return None
@@ -108,7 +116,9 @@ def generate_dublincore(i, dname, data_xml):
 
 
 def generate_metadata_pu(i, dname, data_xml):
-    if not data_xml: return None
+    if not data_xml:
+        return None
+
     try:
         end_date = _embargo_end(data_xml)
         if (end_date):
@@ -116,6 +126,7 @@ def generate_metadata_pu(i, dname, data_xml):
             _build_metadata_pu(gen_file, end_date)
     except Exception as e:
         eprint("#{} ERROR: Could not determine embargo status {}: {}".format(i, data_xml, str(e)))
+        raise Exception("Failed to generate the Princeton metadata for {}".format(dname))
     return True  # succesfully generated OR NOOP
 
 
@@ -167,28 +178,31 @@ def _build_metadata_pu(fname, end_date):
         maker.dcvalue(end_date, element="embargo", qualifier="lift"),
         schema="pu"
     )
-    ed = open(fname, 'w')
-    print(etree.tostring(the_doc, pretty_print=True), file=ed)
-    ed.close()
 
+    metadata_pu_fh = open(fname, 'w')
+    metadata_pu_content = etree.tostring(the_doc, pretty_print=True)
+    metadata_pu_fh.write(metadata_pu_content.decode('utf-8'))
+    metadata_pu_fh.close()
 
 def _dublincore_other_contributors(dcore):
     if (dcore):
-        with open(dcore, 'r') as fp:
-            tree = etree.parse(fp)
-            for el in tree.findall('.//dcvalue[@qualifier="other"]'):
-                col = el.text
-                if col.endswith('Department'):
-                    col = col[:-len('Department')]
-                    yield col.strip()
-                else:
-                    yield col
-
+        try:
+            with codecs.open(dcore, 'r', 'iso-8859-1') as fp:
+                tree = etree.parse(fp)
+                for el in tree.findall('.//dcvalue[@qualifier="other"]'):
+                    col = el.text
+                    if col.endswith('Department'):
+                        col = col[:-len('Department')]
+                        yield col.strip()
+                    else:
+                        yield col
+        except Exception as e:
+            eprint("ERROR: could not parse the XML file {}".format(dcore))
 
 def _embargo_end(data_xml):
     fp = None
     try:
-        fp = open(data_xml, 'r')
+        fp = codecs.open(data_xml, 'r', 'iso-8859-1')
         root = etree.parse(fp).getroot()
         if not root.tag == PROQUEST_ROOT_TAG:
             raise Exception("{} is not root element".format(PROQUEST_ROOT_TAG))
