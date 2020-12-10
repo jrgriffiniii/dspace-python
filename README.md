@@ -8,39 +8,24 @@ Python scripts for DSpace administration.
 
 ## Prerequisites
 
-- python 3.8.3 or python 2.7.18
-- pip
+- python 3.6.9 (this may be `python3` within server environments)
+- pip (this may be `pip3` within server environments)
 - pipenv
 - make
 
 ### Installing `pipenv`
 
 ```
-# For Python 3.x support:
-pyenv local 3.8.3
-
-# Or, for legacy support:
-pyenv local 2.7.18
-
+pyenv local 3.6.9
 pip install pipenv
 ```
 
 ### Installing the Python package dependencies
 
-#### 3.8.3
+#### 3.6.9
 
 ```
-pipenv --python 2.7.18 shell
-pipenv lock --pre
-pipenv install
-```
-
-#### 2.7.18
-
-```
-cp Pipfile.legacy Pipfile
-cp Pipfile.lock.legacy Pipfile.lock
-pipenv --python 2.7.18 shell
+pipenv --python 3.6.9 shell
 pipenv lock --pre
 pipenv install
 ```

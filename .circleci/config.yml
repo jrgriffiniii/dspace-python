@@ -5,7 +5,7 @@ jobs:
     parameters:
       python_version:
         type: string
-        default: '3.8'
+        default: '3.6.9'
     working_directory: ~/dspace-python
     docker:
       - image: circleci/python:<< parameters.python_version >>-node-browsers-legacy
@@ -19,9 +19,6 @@ jobs:
           name: 'Install package dependencies using pipenv'
           command: |
             sudo pip install pipenv
-            if [[ $(python --version 2>&1) =~ 2\.7\. ]]; then
-              cp Pipfile2.7 Pipfile
-            fi
             pipenv lock --pre
             pipenv install --skip-lock
       - save_cache:
@@ -33,7 +30,7 @@ jobs:
     parameters:
       python_version:
         type: string
-        default: '3.8'
+        default: '3.6.9'
     working_directory: ~/dspace-python
     docker:
       - image: circleci/python:<< parameters.python_version >>-node-browsers-legacy
@@ -47,9 +44,6 @@ jobs:
           name: 'Install package dependencies using pipenv'
           command: |
             sudo pip install pipenv
-            if [[ $(python --version 2>&1) =~ 2\.7\. ]]; then
-              cp Pipfile2.7 Pipfile
-            fi
             pipenv lock --pre
             pipenv install --skip-lock
       - run:
@@ -67,7 +61,7 @@ jobs:
     parameters:
       python_version:
         type: string
-        default: '3.8'
+        default: '3.6.9'
     working_directory: ~/dspace-python
     docker:
       - image: circleci/python:<< parameters.python_version >>-node-browsers-legacy
@@ -81,9 +75,6 @@ jobs:
           name: 'Install package dependencies using pipenv'
           command: |
             sudo pip install pipenv
-            if [[ $(python --version 2>&1) =~ 2\.7\. ]]; then
-              cp Pipfile2.7 Pipfile
-            fi
             pipenv lock --pre
             pipenv install --skip-lock
       - run:
@@ -101,7 +92,7 @@ jobs:
     parameters:
       python_version:
         type: string
-        default: '3.8'
+        default: '3.6.9'
     working_directory: ~/dspace-python
     docker:
       - image: circleci/python:<< parameters.python_version >>-node-browsers-legacy
@@ -115,9 +106,6 @@ jobs:
           name: 'Install package dependencies using pipenv'
           command: |
             sudo pip install pipenv
-            if [[ $(python --version 2>&1) =~ 2\.7\. ]]; then
-              cp Pipfile2.7 Pipfile
-            fi
             pipenv lock --pre
             pipenv install --skip-lock
       - run:
@@ -133,7 +121,7 @@ jobs:
     parameters:
       python_version:
         type: string
-        default: '2.7'
+        default: '3.6.9'
     working_directory: ~/dspace-python/thesiscentral-vireo/dataspace/python
     docker:
       - image: circleci/python:<< parameters.python_version >>-node-browsers-legacy
@@ -158,7 +146,7 @@ jobs:
     parameters:
       python_version:
         type: string
-        default: '2.7'
+        default: '3.6.9'
     working_directory: ~/dspace-python/thesiscentral-vireo/dataspace/python
     docker:
       - image: circleci/python:<< parameters.python_version >>-node-browsers-legacy
@@ -187,7 +175,7 @@ jobs:
     parameters:
       python_version:
         type: string
-        default: '2.7'
+        default: '3.6.9'
     working_directory: ~/dspace-python/thesiscentral-vireo/dataspace/python
     docker:
       - image: circleci/python:<< parameters.python_version >>-node-browsers-legacy
@@ -218,7 +206,7 @@ jobs:
     parameters:
       python_version:
         type: string
-        default: '2.7'
+        default: '3.6.9'
     working_directory: ~/dspace-python/thesiscentral-vireo/dataspace/python
     docker:
       - image: circleci/python:<< parameters.python_version >>-node-browsers-legacy
@@ -248,60 +236,41 @@ workflows:
     jobs:
       - build:
           name: build-python3.8
-          python_version: '3.8'
+          python_version: '3.6.9'
       - lint:
           name: lint-python3.8
-          python_version: '3.8'
+          python_version: '3.6.9'
           requires:
             - build-python3.8
       - doc:
           name: doc-python3.8
-          python_version: '3.8'
+          python_version: '3.6.9'
           requires:
             - build-python3.8
       - test:
           name: test-python3.8
-          python_version: '3.8'
+          python_version: '3.6.9'
           requires:
             - lint-python3.8
-
-      - build:
-          name: build-python2.7
-          python_version: '2.7'
-      - lint:
-          name: lint-python2.7
-          python_version: '2.7'
-          requires:
-            - build-python2.7
-      - doc:
-          name: doc-python2.7
-          python_version: '2.7'
-          requires:
-            - build-python2.7
-      - test:
-          name: test-python2.7
-          python_version: '2.7'
-          requires:
-            - lint-python2.7
 
   thesis_central:
     jobs:
       - build_thesis_central:
           name: build-thesis-central2.7
-          python_version: '2.7'
+          python_version: '3.6.9'
       - lint_thesis_central:
           name: lint-thesis-central2.7
-          python_version: '2.7'
+          python_version: '3.6.9'
           requires:
             - build-thesis-central2.7
       - doc_thesis_central:
           name: doc-thesis-central2.7
-          python_version: '2.7'
+          python_version: '3.6.9'
           requires:
             - build-thesis-central2.7
       - test_thesis_central:
           name: test-thesis-central2.7
-          python_version: '2.7'
+          python_version: '3.6.9'
           requires:
             - lint-thesis-central2.7
 
