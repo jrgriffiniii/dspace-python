@@ -20,7 +20,8 @@ Python administration scripts for managing integration with [Thesis Central](htt
 ```bash
 pip install pipenv
 pipenv shell
-pipenv install
+pipenv lock --pre
+pipenv install --dev
 ```
 
 ### Usage

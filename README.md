@@ -27,7 +27,7 @@ pip install pipenv
 ```
 pipenv --python 3.6.9 shell
 pipenv lock --pre
-pipenv install
+pipenv install --dev
 ```
 
 ### Usage
