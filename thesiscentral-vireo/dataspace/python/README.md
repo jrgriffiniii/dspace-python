@@ -8,49 +8,50 @@ Python administration scripts for managing integration with [Thesis Central](htt
 
 ## Getting Started
 
-```
-% python --version
-Python 2.7.17
-```
+### Prerequisites
+
+- python 3.6.9 (this may be `python3` within server environments)
+- pip (this may be `pip3` within server environments)
+- pipenv
+- make
 
 ### Installing Dependencies
 
 ```bash
-% pip install pipenv
-% pipenv shell --python 2.7.17
-% pipenv install
+pip install pipenv
+pipenv shell
+pipenv install
 ```
 
 ### Usage
 
 ```bash
 # Building a new DSpace Simple Archive Format package (SAF)
-% pipenv run dspace --department="Physics" build-package
+pipenv run dspace --department="Physics" build-package
 # Audit the restrictions for an SAF package
-% pipenv run dspace audit-restrictions --department="Physics"
-% pipenv run dspace --help
+pipenv run dspace audit-restrictions --department="Physics"
+# Viewing other tasks
+pipenv run dspace --help
 ```
 
-## Development
-
-### Testing
+## Testing
 
 ```bash
-% pipenv install --dev
-% pipenv run pytest
+pipenv install --dev
+pipenv run pytest
 ```
 
-### Linting
+## Linting
 
 ```bash
-% pipenv install --dev
-% pipenv run pylint ./**/*py
+pipenv install --dev
+pipenv run pylint ./**/*py
 ```
 
-### Generate the Documentation
+## Generating the Documentation
 
 ```bash
-% pipenv install --dev
-% pipenv run sphinx-build -b html -c ./ ./ _build
-% open _build/index.html
+pipenv install --dev
+pipenv run sphinx-build -b html -c ./ ./ _build
+open _build/index.html
 ```

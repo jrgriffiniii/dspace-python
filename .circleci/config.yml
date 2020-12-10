@@ -235,42 +235,41 @@ workflows:
   build_lint_doc_test:
     jobs:
       - build:
-          name: build-python3.8
+          name: build-python3.6
           python_version: '3.6.9'
       - lint:
-          name: lint-python3.8
+          name: lint-python3.6
           python_version: '3.6.9'
           requires:
-            - build-python3.8
+            - build-python3.6
       - doc:
-          name: doc-python3.8
+          name: doc-python3.6
           python_version: '3.6.9'
           requires:
-            - build-python3.8
+            - build-python3.6
       - test:
-          name: test-python3.8
+          name: test-python3.6
           python_version: '3.6.9'
           requires:
-            - lint-python3.8
+            - lint-python3.6
 
   thesis_central:
     jobs:
       - build_thesis_central:
-          name: build-thesis-central2.7
+          name: build-thesis-central3.6
           python_version: '3.6.9'
       - lint_thesis_central:
-          name: lint-thesis-central2.7
+          name: lint-thesis-central3.6
           python_version: '3.6.9'
           requires:
-            - build-thesis-central2.7
+            - build-thesis-central3.6
       - doc_thesis_central:
-          name: doc-thesis-central2.7
+          name: doc-thesis-central3.6
           python_version: '3.6.9'
           requires:
-            - build-thesis-central2.7
+            - build-thesis-central3.6
       - test_thesis_central:
-          name: test-thesis-central2.7
+          name: test-thesis-central3.6
           python_version: '3.6.9'
           requires:
-            - lint-thesis-central2.7
-
+            - lint-thesis-central3.6

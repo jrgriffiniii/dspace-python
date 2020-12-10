@@ -6,7 +6,7 @@ Python scripts for DSpace administration.
 
 ## Getting Started
 
-## Prerequisites
+### Prerequisites
 
 - python 3.6.9 (this may be `python3` within server environments)
 - pip (this may be `pip3` within server environments)
