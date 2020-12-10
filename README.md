@@ -2,7 +2,7 @@
 
 [![CircleCI](https://circleci.com/gh/pulibrary/dspace-python.svg?style=svg)](https://circleci.com/gh/pulibrary/dspace-python)
 
-Python scripts for DSpace administration.
+Python utilities for DSpace administration.
 
 ## Getting Started
 
@@ -32,9 +32,8 @@ pipenv install --dev
 
 ### Usage
 
-- [Thesis Central and Senior Theses Administration](./thesiscentral-vireo/dataspace/python/README.md)
-
-## Development
+- [Thesis Central and Senior Theses Administration](./thesiscentral-vireo/README.md)
+- [Princeton Plasma Physics Lab (PPPL) Administration](./pppl/README.md)
 
 ### Building Documentation
 
