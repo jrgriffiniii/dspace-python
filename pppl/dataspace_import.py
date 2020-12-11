@@ -57,21 +57,21 @@ def _debug(pre, msg):
 
 def _systm(s3_file, cmd, logfile):
     """
-    Execute a command using the BASH
+    execute a command using the bash
 
-    Parameters
+    parameters
     ----------
     s3_file : str
-        The path to the file
+        the path to the file
     cmd : str
-        The command being executed in the shell
+        the command being executed in the shell
     logfile : str
-        The path to the logging file
+        the path to the logging file
 
-    Returns
+    returns
     -------
     int
-        The return code of the command
+        the return code of the command
 
     """
     with open(logfile,"a+") as f: f.write('> ' + cmd + '\n')
@@ -80,7 +80,7 @@ def _systm(s3_file, cmd, logfile):
     if 0 != rc:
         msg = '{} rc={}'.format(cmd, rc)
         _error(msg)
-        with open(logfile,"a+") as f: f.write('ERROR\n')
+        with open(logfile,"a+") as f: f.write('error\n')
     return rc
 
 def _unpack(s3_dir, s3_file, logfile):
@@ -121,7 +121,7 @@ def _unpack(s3_dir, s3_file, logfile):
     else:
         return None
 
-def _import(s3_mirror, log, submitter, s3_file, service):
+def _ingest(s3_mirror, log, submitter, s3_file, import_service):
     """
     Import a file into DSpace given the file path
 
@@ -135,7 +135,7 @@ def _import(s3_mirror, log, submitter, s3_file, service):
         Submitter account
     s3_file : str
         File path for the file in the S3 Bucket
-    service : Object
+    import_service : Object
         Importer service
     """
 
@@ -143,67 +143,75 @@ def _import(s3_mirror, log, submitter, s3_file, service):
     unpacked_dir = None
     s3_file_path = Path(s3_file)
 
-    mapfile_path = service.build_mapfile_path(s3_file_path)
+    mapfile_path = import_service.build_mapfile_path(s3_file_path)
     if mapfile_path.exists():
-        service.logger.info('Removing the empty mapfile {}'.format(mapfile_path))
+        import_service.logger.info('Removing the empty mapfile {}'.format(mapfile_path))
         mapfile_path.unlink()
 
-    logfile = service._logfile(s3_file)
+    logfile = import_service._logfile(s3_file)
     try:
-        decompressed_dir_path = _unpack(service.s3_mirror, s3_file, logfile)
+        decompressed_dir_path = _unpack(import_service.s3_mirror, s3_file, logfile)
 
         if decompressed_dir_path.exists():
-            cmd = service._dataspace_import_cmd(decompressed_dir_path, mapfile_path)
+            cmd = import_service._dataspace_import_cmd(decompressed_dir_path, mapfile_path)
 
             rc = _systm(s3_file, cmd, logfile)
-            success = rc == 0 and service.isarchived(s3_file_path)
+            success = rc == 0 and import_service.isarchived(s3_file_path)
     except:
         pass
 
     success_state = 'SUCCESS' if success else 'FAILURE'
-    service.logger.info('Import status for {}: {}'.format(s3_file, success_state))
+    import_service.logger.info('Import status for {}: {}'.format(s3_file, success_state))
     if not success:
         logging.info('Please check the logging entries in {}'.format(logfile))
 
     logging.info('----')
 
-def _work_sips(service):
-    """
-    Imports the S3 data sets into a DSpace installation
+class Package:
+    def __init__(self, path):
+        self.path = path
 
-    Parameters
-    ----------
-    s3_mirror : str
-        The directory path for the S3 synchronization
-    log : Logger
-        The system logger
-    submitter : str
-        The e-mail address for the DSpace user importing the data sets
+class PackageDirectory:
 
-    """
-    logging.info('SETUP local-bucket-mirror:  {}'.format(service.s3_mirror))
-    logging.info('SETUP log-directory:  {}'.format(service.log))
-    logging.info('SETUP submitter:  {}'.format(service.eperson))
+    def __init__(self, path, import_service):
+        self._path = path
+        self._import_service = import_service
 
-    s3_files = os.listdir(service.s3_mirror)
-    s3_file_batch_size = len(s3_files)
-    for s3_file in s3_files:
-        s3_file_path = pathlib.Path(s3_file)
+        self._files = os.listdir(self._path)
+        self._packages = self.parse_files()
 
-        if (ImporterService.isarchivepath(s3_file_path) and not service.isarchived(s3_file_path)):
-            service.logger.info("Importing {}".format(s3_file_path))
-            _import(service.s3_mirror, service.log, service.eperson, s3_file, service)
+    def isnewpackage(package_path):
+        return ImportService.ispackagepath(package_path) and not self._import_service.isarchived(package_path)
 
-    return _nerror
+    def parse_files(self):
+        packages = []
 
-class ImporterService:
+        for s3_file in self._files:
+            s3_file_path = pathlib.Path(s3_file)
+
+        if self.isnewpackage(s3_file_path):
+            package = Package(s3_file_path)
+            packages.append(package)
+
+        self._packages = packages
+        return self._packages
+
+    def ingest(self):
+        for package in self._packages:
+            self._import_service.ingest(package)
+            # self._import_service.logger.info("Importing {}".format(package.path))
+            # _import(self._import_service.s3_mirror, self._import_service.log, import_service.eperson, package, import_service)
+
+    pass
+
+class ImportService:
     # This needs to be refactored
     @classmethod
     def aws_s3_path(cls):
         return S3_MIRROR
 
     @classmethod
-    def isarchivepath(cls, file_path):
+    def ispackagepath(cls, file_path):
         return file_path.suffix == '.tgz'
 
     def build_mapfile_path(self, archive_path):
@@ -238,6 +246,90 @@ class ImporterService:
 
         return cmd
 
+    def _log_error(self, message):
+        global _nerror
+        _nerror = _nerror + 1
+        logging.error(message)
+
+    def _execute(self, command, logfile):
+
+        with open(logfile, "a+") as f:
+            f.write('> ' + command + '\n')
+
+        return_code = os.system('({}) >> {} 2>&1'.format(command, logfile))
+
+        if 0 != return_code:
+            message = '{} rc={}'.format(command, return_code)
+
+            # _error(msg)
+            self._log_error(message)
+
+            with open(logfile, "a+") as f:
+                f.write('error\n')
+
+        return return_code
+
+    def import_into_dspace(self, source_path, mapfile_path):
+
+        cmd = self._dataspace_import_cmd(source_path, mapfile_path)
+        # rc = _systm(s3_file, cmd, logfile)
+        return_code = self._execute(command, logfile)
+        success = return_code == 0 and self.isarchived(s3_file_path)
+
+        return success
+
+    def _unpack(self, package, logfile):
+        try:
+            segments = package.path.split('.')
+            dirname = "{}/imports/{}".format(S3_MIRROR, segments[0])
+            # This structure is required for DSpace imports
+            item_dirname = "{}/{}".format(dirname, "item_000")
+
+            if not os.path.isdir(dirname):
+                os.makedirs(dirname)
+                os.makedirs(item_dirname)
+        except Exception as error:
+            logging.error(str(error))
+            return self._log_error('could not create {}'.format(dirname))
+
+        cmd = 'cd {}; tar xvfz {}/{}; cd -'.format(item_dirname, s3_dir, s3_file)
+        rc = self._execute(cmd, logfile)
+        if 0 == rc:
+            return Path(dirname)
+
+    def ingest(self, package):
+        success = False
+        unpacked_dir = None
+
+        s3_file_path = Path(package.path)
+
+        # Replace this with package.mapfile
+        mapfile_path = self.build_mapfile_path(s3_file_path)
+        if mapfile_path.exists():
+            self.logger.info('Removing the empty mapfile {}'.format(mapfile_path))
+            mapfile_path.unlink()
+
+        # Replace this with package.logfile
+        logfile = self._logfile(package.path)
+        try:
+            # decompressed_dir_path = _unpack(self.s3_mirror, s3_file, logfile)
+            decompressed_dir_path = self._unpack(package, logfile)
+
+            if decompressed_dir_path.exists():
+                # cmd = self._dataspace_import_cmd(decompressed_dir_path, mapfile_path)
+
+                # rc = _systm(s3_file, cmd, logfile)
+                # success = rc == 0 and self.isarchived(s3_file_path)
+                success = self.import_into_dspace(decompressed_dir_path, mapfile_path)
+        except:
+            # This needs to be handled
+            pass
+
+        success_state = 'SUCCESS' if success else 'FAILURE'
+        self.logger.info('Import status for {}: {}'.format(package, success_state))
+        if not success:
+            logging.info('Please check the logging entries in {}'.format(logfile))
+
     def _logfile(self, tgz):
         """
         Generate the file path for the DSpace import log file given a file name
@@ -251,13 +343,6 @@ class ImporterService:
         return '{}/imports/{}.log'.format(self.s3_mirror, tgz)
 
     def configure_logging(self):
-        #if self.args.verbose > 1:
-        #    logger_level = logging.DEBUG
-        #elif self.args.verbose == 1:
-        #    logger_level = logging.INFO
-        #else:
-        #    logger_level = logging.WARNING
-
         logger_level = logging.DEBUG
 
         logger = logging.getLogger()
@@ -287,16 +372,24 @@ class ImporterService:
         self.log = '{}/log'.format(self.s3_mirror)
 
 if __name__=="__main__":
-    service = ImporterService(DSPACE_HOME, S3_MIRROR, SUBMITTER)
-    # service.parse_args()
-    service.configure_logging()
+
+    import_service = ImportService(DSPACE_HOME, S3_MIRROR, SUBMITTER)
+    import_service.configure_logging()
 
     s3_file_batch_size = 0
     _nerror = 0
 
-    exit_code = _work_sips(service)
+    # exit_code = _work_sips(import_service)
+
+    logging.info('SETUP local-bucket-mirror:  {}'.format(import_service.s3_mirror))
+    logging.info('SETUP log-directory:  {}'.format(import_service.log))
+    logging.info('SETUP submitter:  {}'.format(import_service.eperson))
+
+    package_dir = PackageDirectory(S3_MIRROR, import_service)
+    exit_code = package_dir.ingest()
+
     if exit_code == 0:
-        service.logger.info('SUCCESS all packages imported')
+        import_service.logger.info('SUCCESS all packages imported')
         sys.exit(0)
     else:
         _error('failed to import {} packages'.format(s3_file_batch_size))
