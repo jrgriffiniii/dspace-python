@@ -38,7 +38,7 @@ Please ensure that the following configuration files are in place for AWS in `$H
 
 ```bash
 [default]
-aws_access_key_id = [KEY_ID]
+aws_access_key_id = [ACCESS_KEY_ID]
 aws_secret_access_key = [SECRET_ACCESS_KEY]
 aws_region = us-east-1
 ```
@@ -47,17 +47,30 @@ The following should also be in place with `$HOME/.aws/config`:
 
 ```bash
 [default]
+region = us-east-1
 ```
 
 Alternatively, should access fail, please explicitly declare the BASH environment variables:
 
 ```bash
-export AWS_ACCESS_KEY_ID=[KEY_ID]
+export AWS_ACCESS_KEY_ID=[ACCESS_KEY_ID]
 export AWS_SECRET_ACCESS_KEY=[SECRET_ACCESS_KEY]
 export AWS_DEFAULT_REGION=us-east-1
 ```
 
 ## Usage
+
+```bash
+pipenv run pppl sync \
+  --s3-mount-point=dspace_imports
+```
+
+```bash
+pipenv run pppl ingest \
+  --s3-mount-point=dspace_imports \
+  --dspace-submitter=admin@institution.edu \
+  --dspace-home=/dspace
+```
 
 ```bash
 export DSPACE_HOME=/dspace

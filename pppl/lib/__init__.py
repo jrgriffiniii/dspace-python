@@ -4,116 +4,15 @@ import shutil
 import logging
 import argparse
 from pathlib import Path
-
 import pdb
 import boto3
-
+import re
 
 LOGLEVEL = "DEBUG"
 SKIP = 'SKIP'
 IMPORT = 'IMPORT'
 DONE = 'DONE'
 INTERNAL = 'INTERNAL'
-
-s3_file_batch_size = 0
-_nerror = 0
-
-def _error(msg):
-    """
-    Log a message for the error log
-
-    """
-
-    global _nerror
-    _nerror = _nerror + 1
-    logging.error(msg)
-
-    return None
-
-def _info(pre, msg):
-    """
-    Log a message for the info log
-
-    """
-
-    logging.info('{}: {}'.format(pre, msg))
-
-    return None
-
-def _debug(pre, msg):
-    """
-    Log a message for the debugging log
-
-    """
-    logging.debug('{}: {}'.format(pre, msg))
-
-    return None
-
-def _systm(s3_file, cmd, logfile):
-    """
-    execute a command using the bash
-
-    parameters
-    ----------
-    s3_file : str
-        the path to the file
-    cmd : str
-        the command being executed in the shell
-    logfile : str
-        the path to the logging file
-
-    returns
-    -------
-    int
-        the return code of the command
-
-    """
-    with open(logfile,"a+") as f: f.write('> ' + cmd + '\n')
-    rc = os.system('({}) >> {} 2>&1'.format(cmd, logfile))
-
-    if 0 != rc:
-        msg = '{} rc={}'.format(cmd, rc)
-        _error(msg)
-        with open(logfile,"a+") as f: f.write('error\n')
-    return rc
-
-def _unpack(s3_dir, s3_file, logfile):
-    """
-    Decompress the GZipped TAR into a directory
-
-    Parameters
-    ----------
-    s3_dir : str
-        The directory path for the S3 synchronization
-    s3_file : str
-        The TAR file from the S3 Bucket
-    logfile : str
-        The path to to the log file
-
-    Returns
-    -------
-    str
-        The name of the directory where the TAR has been decompressed
-    """
-    try:
-        segments = s3_file.split('.')
-        dirname = "{}/imports/{}".format(S3_MIRROR, segments[0])
-        # This structure is required for DSpace imports
-        item_dirname = "{}/{}".format(dirname, "item_000")
-
-        if not os.path.isdir(dirname):
-            os.makedirs(dirname)
-            os.makedirs(item_dirname)
-    except Exception as error:
-        logging.error(str(error))
-        return _error('could not create {}'.format(dirname))
-
-    cmd = 'cd {}; tar xvfz {}/{}; cd -'.format(item_dirname, s3_dir, s3_file)
-    rc = _systm(s3_file, cmd, logfile)
-    if 0 == rc:
-        return Path(dirname)
-    else:
-        return None
 
 class Package:
     def __init__(self, path):
@@ -145,12 +44,18 @@ class PackageDirectory:
         return self._packages
 
     def ingest(self):
+        status = True
+
         for package in self._packages:
-            self._import_service.ingest(package)
+            imported = self._import_service.ingest(package)
+            if imported:
+                self._import_service.batch_size += 1
+            else:
+                status = False
+
             # self._import_service.logger.info("Importing {}".format(package.path))
             # _import(self._import_service.s3_mirror, self._import_service.log, import_service.eperson, package, import_service)
-
-    pass
+        return status
 
 class ImportService:
     @classmethod
@@ -189,11 +94,6 @@ class ImportService:
 
         return cmd
 
-    def _log_error(self, message):
-        global _nerror
-        _nerror = _nerror + 1
-        logging.error(message)
-
     def _execute(self, command, logfile):
 
         with open(logfile, "a+") as f:
@@ -202,10 +102,8 @@ class ImportService:
         return_code = os.system('({}) >> {} 2>&1'.format(command, logfile))
 
         if 0 != return_code:
-            message = '{} rc={}'.format(command, return_code)
-
-            # _error(msg)
-            self._log_error(message)
+            error_message = '{} rc={}'.format(command, return_code)
+            self.logger.error(error_message)
 
             with open(logfile, "a+") as f:
                 f.write('error\n')
@@ -217,9 +115,9 @@ class ImportService:
         cmd = self._dataspace_import_cmd(source_path, mapfile_path)
         # rc = _systm(s3_file, cmd, logfile)
         return_code = self._execute(command, logfile)
-        success = return_code == 0 and self.isarchived(s3_file_path)
+        imported = return_code == 0 and self.isarchived(s3_file_path)
 
-        return success
+        return imported
 
     def _unpack(self, package, logfile):
         try:
@@ -232,8 +130,9 @@ class ImportService:
                 os.makedirs(dirname)
                 os.makedirs(item_dirname)
         except Exception as error:
-            logging.error(str(error))
-            return self._log_error('could not create {}'.format(dirname))
+            error_message = 'Failed to create the directory {}: {}'.format(dirname, str(error))
+            self.logger.error(error_message)
+            return
 
         cmd = 'cd {}; tar xvfz {}/{}; cd -'.format(item_dirname, s3_dir, s3_file)
         rc = self._execute(cmd, logfile)
@@ -241,7 +140,7 @@ class ImportService:
             return Path(dirname)
 
     def ingest(self, package):
-        success = False
+        imported = False
         unpacked_dir = None
 
         s3_file_path = Path(package.path)
@@ -263,15 +162,18 @@ class ImportService:
 
                 # rc = _systm(s3_file, cmd, logfile)
                 # success = rc == 0 and self.isarchived(s3_file_path)
-                success = self.import_into_dspace(decompressed_dir_path, mapfile_path)
+                imported = self.import_into_dspace(decompressed_dir_path, mapfile_path)
         except:
             # This needs to be handled
+            pdb.set_trace()
             pass
 
-        success_state = 'SUCCESS' if success else 'FAILURE'
+        success_state = 'SUCCESS' if imported else 'FAILURE'
         self.logger.info('Import status for {}: {}'.format(package, success_state))
-        if not success:
-            logging.info('Please check the logging entries in {}'.format(logfile))
+        if not imported:
+            self.logger.warn('Please check the logging entries in {}'.format(logfile))
+
+        return imported
 
     def _logfile(self, tgz):
         """
@@ -313,7 +215,9 @@ class ImportService:
         # This should be removed
         # self.aws_s3_path = self.s3_mirror
         self.eperson = eperson
+
         self.log = '{}/log'.format(self._package_bucket.mount_point)
+        self.batch_size = 0
 
         self._package_bucket = package_bucket
 
@@ -329,14 +233,44 @@ class PackageBucket:
 
     def download(self, overwrite=False):
         for bucket in self.buckets:
-            mounted_bucket_path = Path(mount_point, bucket.name)
+            mounted_bucket_path = Path(self.mount_point, bucket.name)
             if not mounted_bucket_path.is_dir():
                 mounted_bucket_path.mkdir()
 
-            for s3_object in bucket.objects:
-                file_path = Path(mount_point, bucket.name, s3_object.name)
+            for s3_object in bucket.objects.all():
+                file_path = Path(self.mount_point, bucket.name, s3_object.key)
+                s3_resource_summary = s3_object.get()
+
                 if not file_path.is_file() or overwrite:
-                    self.client.download_fileobj(bucket.name, s3_object.name, file_name)
+
+                    # Iterate through the path and create the sub-directories
+                    segments = s3_object.key.split('/')
+                    for index, segment in enumerate(segments):
+                        # pdb.set_trace()
+                        # if re.match(r"\.\w+?$", segment):
+                        if s3_resource_summary['ContentType'] == 'application/x-directory':
+                            local_segments = segments[0:index]
+                            local_segments.append(segment)
+                            local_path = Path(self.mount_point, bucket.name, *local_segments)
+
+                            if not local_path.is_dir():
+                                local_path.mkdir()
+                        # else:
+                        #    local_segments = segments[0:index]
+                        #    local_segments.append(segment)
+                        #    local_path = Path(self.mount_point, bucket.name, *local_segments)
+
+                    # for child_path in file_path.iterdir():
+
+                    #     if child_path.isdir():
+                    #         local_child_path = Path(self.mount_point, bucket.name, child_path)
+                    #         if not local_child_path.isdir():
+                    #             local_child_path.mkdir()
+
+                    file_path_value = str(file_path)
+                    if s3_resource_summary['ContentType'] != 'application/x-directory':
+                        api_object = s3_object.Object()
+                        api_object.download_file(file_path_value)
 
 if __name__=="__main__":
 
@@ -354,17 +288,14 @@ if __name__=="__main__":
     logging.info('SETUP log-directory:  {}'.format(import_service.log))
     logging.info('SETUP submitter:  {}'.format(import_service.eperson))
 
-    s3_file_batch_size = 0
-    _nerror = 0
-
     # exit_code = _work_sips(import_service)
 
     package_dir = PackageDirectory(aws_bucket.mount_point, import_service)
     exit_code = package_dir.ingest()
 
-    if exit_code == 0:
-        import_service.logger.info('SUCCESS all packages imported')
-        sys.exit(0)
-    else:
-        _error('failed to import {} packages'.format(s3_file_batch_size))
+    if exit_code != 0:
+        import_service.logger.error('Failed to import {} packages into DSpace.'.format(s3_file_batch_size))
         sys.exit(exit_code)
+
+    import_service.logger.info('SUCCESS all packages imported')
+    sys.exit(0)

@@ -22,8 +22,19 @@ def ingest(s3_mount_point, dspace_submitter, dspace_home):
     import_service = ImportService(dspace_home, dspace_submitter, aws_bucket)
     import_service.configure_logging()
 
+    import_service.logger.info('SETUP local-bucket-mirror:  {}'.format(s3_mount_point))
+    import_service.logger.info('SETUP log-directory:  {}'.format(import_service.log))
+    import_service.logger.info('SETUP submitter:  {}'.format(dspace_submitter))
+
     package_dir = PackageDirectory(aws_bucket.mount_point, import_service)
-    package_dir.ingest()
+    ingested = package_dir.ingest()
+
+    if not ingested:
+        error_message = 'Failed to import {} packages into DSpace.'.format(import_service.batch_size)
+        import_service.logger.error(error_message)
+        sys.exit(exit_code)
+
+    import_service.logger.info('All packages were successfully imported into DSpace.')
 
 cli.add_command(sync)
 cli.add_command(ingest)
