@@ -31,7 +31,7 @@ pipenv install --dev
 *This is intended to be installed and run on the server environment:*
 
 ```bash
-pip install --user awscli pathlib2
+pip install --user awscli
 ```
 
 Please ensure that the following configuration files are in place for AWS in `$HOME/.aws/credentials`:

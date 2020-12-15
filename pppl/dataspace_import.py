@@ -3,10 +3,10 @@ import sys
 import shutil
 import logging
 import argparse
-import pathlib2 as pathlib
-from pathlib2 import Path
+from pathlib import Path
 
 import pdb
+import boto3
 
 if len(sys.argv) < 4:
     raise Exception('Usage: dataspace_import.py $DSPACE_HOME $DSPACE_EPERSON $S3_PATH')
@@ -121,52 +121,6 @@ def _unpack(s3_dir, s3_file, logfile):
     else:
         return None
 
-def _ingest(s3_mirror, log, submitter, s3_file, import_service):
-    """
-    Import a file into DSpace given the file path
-
-    Parameters
-    ----------
-    s3_mirror : str
-        The directory path for the S3 synchronization
-    log : Object
-        The system logger
-    submitter: str
-        Submitter account
-    s3_file : str
-        File path for the file in the S3 Bucket
-    import_service : Object
-        Importer service
-    """
-
-    success = False
-    unpacked_dir = None
-    s3_file_path = Path(s3_file)
-
-    mapfile_path = import_service.build_mapfile_path(s3_file_path)
-    if mapfile_path.exists():
-        import_service.logger.info('Removing the empty mapfile {}'.format(mapfile_path))
-        mapfile_path.unlink()
-
-    logfile = import_service._logfile(s3_file)
-    try:
-        decompressed_dir_path = _unpack(import_service.s3_mirror, s3_file, logfile)
-
-        if decompressed_dir_path.exists():
-            cmd = import_service._dataspace_import_cmd(decompressed_dir_path, mapfile_path)
-
-            rc = _systm(s3_file, cmd, logfile)
-            success = rc == 0 and import_service.isarchived(s3_file_path)
-    except:
-        pass
-
-    success_state = 'SUCCESS' if success else 'FAILURE'
-    import_service.logger.info('Import status for {}: {}'.format(s3_file, success_state))
-    if not success:
-        logging.info('Please check the logging entries in {}'.format(logfile))
-
-    logging.info('----')
-
 class Package:
     def __init__(self, path):
         self.path = path
@@ -205,18 +159,13 @@ class PackageDirectory:
     pass
 
 class ImportService:
-    # This needs to be refactored
-    @classmethod
-    def aws_s3_path(cls):
-        return S3_MIRROR
-
     @classmethod
     def ispackagepath(cls, file_path):
         return file_path.suffix == '.tgz'
 
     def build_mapfile_path(self, archive_path):
         mapfile_name = "{}.mapfile".format(archive_path.name)
-        path = Path(self.aws_s3_path, 'imports', mapfile_name)
+        path = Path(self._package_bucket.mount_point, 'imports', mapfile_name)
 
         return path
 
@@ -281,7 +230,7 @@ class ImportService:
     def _unpack(self, package, logfile):
         try:
             segments = package.path.split('.')
-            dirname = "{}/imports/{}".format(S3_MIRROR, segments[0])
+            dirname = "{}/imports/{}".format(self._package_bucket.mount_point, segments[0])
             # This structure is required for DSpace imports
             item_dirname = "{}/{}".format(dirname, "item_000")
 
@@ -340,7 +289,7 @@ class ImportService:
             The path to the file
         """
 
-        return '{}/imports/{}.log'.format(self.s3_mirror, tgz)
+        return '{}/imports/{}.log'.format(self._package_bucket.mount_point, tgz)
 
     def configure_logging(self):
         logger_level = logging.DEBUG
@@ -363,29 +312,56 @@ class ImportService:
         self.args = args
         return self.args
 
-    def __init__(self, dspace_home, s3_mirror, eperson):
+    def __init__(self, dspace_home, eperson, package_bucket):
         self.dspace_home = dspace_home
         # This attribute should be renamed
-        self.s3_mirror = s3_mirror
-        self.aws_s3_path = self.s3_mirror
+        # self.s3_mirror = s3_mirror
+        # This should be removed
+        # self.aws_s3_path = self.s3_mirror
         self.eperson = eperson
-        self.log = '{}/log'.format(self.s3_mirror)
+        self.log = '{}/log'.format(self._package_bucket.mount_point)
+
+        self._package_bucket = package_bucket
+
+class PackageBucket:
+
+    def __init__(self, mount_point):
+        self.mount_point = Path(mount_point)
+
+        self._client = boto3.client('s3')
+        self._s3 = boto3.resource('s3')
+
+        self.buckets = list(self._s3.buckets.all())
+
+    def download(self, overwrite=False):
+        for bucket in self.buckets:
+            mounted_bucket_path = Path(mount_point, bucket.name)
+            if not mounted_bucket_path.is_dir():
+                mounted_bucket_path.mkdir()
+
+            for s3_object in bucket.objects:
+                file_path = Path(mount_point, bucket.name, s3_object.name)
+                if not file_path.is_file() or overwrite:
+                    self.client.download_fileobj(bucket.name, s3_object.name, file_name)
 
 if __name__=="__main__":
 
-    import_service = ImportService(DSPACE_HOME, S3_MIRROR, SUBMITTER)
+    aws_bucket = PackageBucket(S3_MIRROR)
+    aws_bucket.download()
+
+    import_service = ImportService(DSPACE_HOME, SUBMITTER, aws_bucket)
     import_service.configure_logging()
+
+    logging.info('SETUP local-bucket-mirror:  {}'.format(import_service._package_bucket.mount_point))
+    logging.info('SETUP log-directory:  {}'.format(import_service.log))
+    logging.info('SETUP submitter:  {}'.format(import_service.eperson))
 
     s3_file_batch_size = 0
     _nerror = 0
 
     # exit_code = _work_sips(import_service)
 
-    logging.info('SETUP local-bucket-mirror:  {}'.format(import_service.s3_mirror))
-    logging.info('SETUP log-directory:  {}'.format(import_service.log))
-    logging.info('SETUP submitter:  {}'.format(import_service.eperson))
-
-    package_dir = PackageDirectory(S3_MIRROR, import_service)
+    package_dir = PackageDirectory(aws_bucket.mount_point, import_service)
     exit_code = package_dir.ingest()
 
     if exit_code == 0:
