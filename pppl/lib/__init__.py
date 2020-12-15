@@ -23,6 +23,7 @@ class PackageDirectory:
     def __init__(self, path, import_service):
         self._path = path
         self._import_service = import_service
+        self.logger = import_service.logger
 
         self._files = os.listdir(self._path)
         self._packages = self.parse_files()
@@ -222,6 +223,14 @@ class ImportService:
         self._package_bucket = package_bucket
 
 class PackageBucket:
+    def configure_logging(self):
+        logger_level = logging.DEBUG
+
+        logger = logging.getLogger()
+        logger.setLevel(logger_level)
+
+        self.logger = logger
+        return self.logger
 
     def __init__(self, mount_point):
         self.mount_point = Path(mount_point)
@@ -231,46 +240,35 @@ class PackageBucket:
 
         self.buckets = list(self._s3.buckets.all())
 
+        self.logger = self.configure_logging()
+
     def download(self, overwrite=False):
         for bucket in self.buckets:
             mounted_bucket_path = Path(self.mount_point, bucket.name)
             if not mounted_bucket_path.is_dir():
                 mounted_bucket_path.mkdir()
 
-            for s3_object in bucket.objects.all():
-                file_path = Path(self.mount_point, bucket.name, s3_object.key)
-                s3_resource_summary = s3_object.get()
+            s3_resources = list(bucket.objects.all())
+            sorted_s3_resources = sorted(s3_resources, key=lambda s3_resource: s3_resource.key)
 
-                if not file_path.is_file() or overwrite:
+            for s3_resource in sorted_s3_resources:
+                file_path = Path(self.mount_point, bucket.name, s3_resource.key)
+                s3_resource_summary = s3_resource.get()
 
-                    # Iterate through the path and create the sub-directories
-                    segments = s3_object.key.split('/')
-                    for index, segment in enumerate(segments):
-                        # pdb.set_trace()
-                        # if re.match(r"\.\w+?$", segment):
-                        if s3_resource_summary['ContentType'] == 'application/x-directory':
-                            local_segments = segments[0:index]
-                            local_segments.append(segment)
-                            local_path = Path(self.mount_point, bucket.name, *local_segments)
+                if s3_resource_summary['ContentType'] == 'application/x-directory':
+                    dir_name = s3_resource.key
+                    local_path = Path(self.mount_point, bucket.name, dir_name)
 
-                            if not local_path.is_dir():
-                                local_path.mkdir()
-                        # else:
-                        #    local_segments = segments[0:index]
-                        #    local_segments.append(segment)
-                        #    local_path = Path(self.mount_point, bucket.name, *local_segments)
-
-                    # for child_path in file_path.iterdir():
-
-                    #     if child_path.isdir():
-                    #         local_child_path = Path(self.mount_point, bucket.name, child_path)
-                    #         if not local_child_path.isdir():
-                    #             local_child_path.mkdir()
-
+                    if not local_path.is_dir():
+                        local_path.mkdir()
+                elif not file_path.is_file() or overwrite:
                     file_path_value = str(file_path)
-                    if s3_resource_summary['ContentType'] != 'application/x-directory':
-                        api_object = s3_object.Object()
+                    api_object = s3_resource.Object()
+                    try:
                         api_object.download_file(file_path_value)
+                    except Exception as download_error:
+                        error_message = "Failed to download the AWS S3 resource {}: {}".format(s3_resource.key, download_error)
+                        self.logger.error(error_message)
 
 if __name__=="__main__":
 
