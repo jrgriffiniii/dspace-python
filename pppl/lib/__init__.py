@@ -236,9 +236,9 @@ class PackageBucket:
         self.mount_point = Path(mount_point)
 
         self._session = boto3.Session('s3',
-            aws_access_key_id=os.getenv('AWS_ACCESS_KEY_ID'),
-            aws_secret_access_key=os.getenv('AWS_SECRET_ACCESS_KEY'),
-            aws_session_token=os.getenv('AWS_DEFAULT_REGION')
+            aws_access_key_id=os.environ['AWS_ACCESS_KEY_ID'],
+            aws_secret_access_key=os.environ['AWS_SECRET_ACCESS_KEY'],
+            aws_session_token=os.environ['AWS_DEFAULT_REGION']
         )
         self._s3 = self._session.resource('s3')
 
