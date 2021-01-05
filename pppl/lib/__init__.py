@@ -235,8 +235,12 @@ class PackageBucket:
     def __init__(self, mount_point):
         self.mount_point = Path(mount_point)
 
-        self._client = boto3.client('s3')
-        self._s3 = boto3.resource('s3')
+        self._session = boto3.Session('s3',
+            aws_access_key_id=os.getenv('AWS_ACCESS_KEY_ID'),
+            aws_secret_access_key=os.getenv('AWS_SECRET_ACCESS_KEY'),
+            aws_session_token=os.getenv('AWS_DEFAULT_REGION')
+        )
+        self._s3 = self._session.resource('s3')
 
         self.buckets = list(self._s3.buckets.all())
 
