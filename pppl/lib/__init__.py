@@ -164,10 +164,9 @@ class ImportService:
                 # rc = _systm(s3_file, cmd, logfile)
                 # success = rc == 0 and self.isarchived(s3_file_path)
                 imported = self.import_into_dspace(decompressed_dir_path, mapfile_path)
-        except:
-            # This needs to be handled
-            pdb.set_trace()
-            pass
+        except Exception as ingest_error:
+            self.logger.error('Error ingesting {}: {}'.format(package.path, ingest_error))
+            self.logger.error('Please check the logging entries in {}'.format(logfile))
 
         success_state = 'SUCCESS' if imported else 'FAILURE'
         self.logger.info('Import status for {}: {}'.format(package, success_state))
