@@ -266,7 +266,7 @@ class PackageBucket:
                     if not local_path.is_dir():
                         local_path.mkdir()
                 elif not file_path.is_file() or overwrite:
-                    if len(file_path.parents) > len(self.mount_point.parents)
+                    if len(file_path.parents) > len(self.mount_point.parents):
                         for parent_path in reversed(file_path.parents):
                             if not parent_path.is_dir():
                                 parent_path.mkdir()
