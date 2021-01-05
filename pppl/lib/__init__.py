@@ -235,14 +235,15 @@ class PackageBucket:
     def __init__(self, mount_point):
         self.mount_point = Path(mount_point)
 
-        self._session = boto3.Session('s3',
+        self._session = boto3.Session(
             aws_access_key_id=os.environ['AWS_ACCESS_KEY_ID'],
             aws_secret_access_key=os.environ['AWS_SECRET_ACCESS_KEY'],
-            aws_session_token=os.environ['AWS_DEFAULT_REGION']
+            region_name=os.environ['AWS_DEFAULT_REGION']
         )
         self._s3 = self._session.resource('s3')
 
-        self.buckets = list(self._s3.buckets.all())
+        self._root_bucket = self._s3.Bucket('pppldataspace')
+        self.buckets = [self._root_bucket]
 
         self.logger = self.configure_logging()
 
@@ -266,6 +267,11 @@ class PackageBucket:
                     if not local_path.is_dir():
                         local_path.mkdir()
                 elif not file_path.is_file() or overwrite:
+                    if len(file_path.parents) > len(self.mount_point.parents)
+                        for parent_path in reversed(file_path.parents):
+                            if not parent_path.is_dir():
+                                parent_path.mkdir()
+
                     file_path_value = str(file_path)
                     api_object = s3_resource.Object()
                     try:
