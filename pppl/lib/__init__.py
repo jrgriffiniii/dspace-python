@@ -7,6 +7,8 @@ from pathlib import Path
 import pdb
 import boto3
 import re
+import smtplib
+import ssl
 
 LOGLEVEL = "DEBUG"
 SKIP = 'SKIP'
@@ -28,14 +30,14 @@ class PackageDirectory:
         self._files = os.listdir(self._path)
         self._packages = self.parse_files()
 
-    def isnewpackage(package_path):
+    def isnewpackage(self, package_path):
         return ImportService.ispackagepath(package_path) and not self._import_service.isarchived(package_path)
 
     def parse_files(self):
         packages = []
 
         for s3_file in self._files:
-            s3_file_path = pathlib.Path(s3_file)
+            s3_file_path = Path(s3_file)
 
         if self.isnewpackage(s3_file_path):
             package = Package(s3_file_path)
@@ -58,7 +60,80 @@ class PackageDirectory:
             # _import(self._import_service.s3_mirror, self._import_service.log, import_service.eperson, package, import_service)
         return status
 
+class EmailMessageService:
+    @staticmethod
+    def build_config(file_path='config/default.yml'):
+        fh = file(file_path, 'rb')
+        config = yaml.load(fh)
+        fh.close()
+
+        return config
+
+    @classmethod
+    def build_from_config(cls, config):
+        built = cls(config['sender_email'], config['receiver_email'], config['host'], config['port'])
+
+        return built
+
+    @classmethod
+    def build(cls, file_path='config/default.yml'):
+        config = cls.build_config(file_path)
+        built = cls.build_from_config(config)
+
+        return built
+
+    def __init__(self, sender_email, receiver_email, host = 'localhost', port = 465):
+        self.sender_email = sender_email
+        self.receiver_email = receiver_email
+        self._host = host
+        self._port = port
+
+        self._context = ssl.create_default_context()
+
+    def send_message(self, message):
+        with smtplib.SMTP_SSL(self._host, self._port, context=self._context) as server:
+            status = server.sendmail(self.sender_email, self.receiver_email, message)
+
+        return status
+
+    @staticmethod
+    def default_email_subject():
+
+        return "DSpace Item Ingested"
+
+    @staticmethod
+    def default_text_body():
+
+        return "DSpace Item Ingested"
+
+    @staticmethod
+    def default_html_body():
+
+        return "<p>DSpace Item Ingested</p>"
+
+    def build_ingestion_message(self):
+        subject = self.__class__.default_email_subject()
+
+        message = MIMEMultipart("alternative")
+        message["Subject"] = subject
+        message["From"] = self.sender_email
+        message["To"] = self.receiver_email
+
+        text_body = self.__class__.default_text_body()
+
+        text_mime = MIMEText(text_body, "text")
+        message.attach(text_mime)
+
+        html_body = self.__class__.default_html_body()
+
+        html_mime = MIMEText(html_body, "html")
+        message.attach(html_mime)
+
+        return message
+
 class ImportService:
+    message_service = EmailMessageService
+
     @classmethod
     def ispackagepath(cls, file_path):
         return file_path.suffix == '.tgz'
@@ -112,9 +187,7 @@ class ImportService:
         return return_code
 
     def import_into_dspace(self, source_path, mapfile_path):
-
-        cmd = self._dataspace_import_cmd(source_path, mapfile_path)
-        # rc = _systm(s3_file, cmd, logfile)
+        command = self._dataspace_import_cmd(source_path, mapfile_path)
         return_code = self._execute(command, logfile)
         imported = return_code == 0 and self.isarchived(s3_file_path)
 
@@ -139,6 +212,17 @@ class ImportService:
         rc = self._execute(cmd, logfile)
         if 0 == rc:
             return Path(dirname)
+
+    @classmethod
+    def build_email_service(cls):
+        built = cls.message_service.build()
+
+        return built
+
+    def send_email_message(self, message):
+        status = self._message_service.send_message(message)
+
+        return status
 
     def ingest(self, package):
         imported = False
@@ -170,7 +254,11 @@ class ImportService:
 
         success_state = 'SUCCESS' if imported else 'FAILURE'
         self.logger.info('Import status for {}: {}'.format(package, success_state))
-        if not imported:
+
+        if imported:
+            ingested_message = self.build_ingestion_message()
+            self.send_email_message(ingested_message)
+        else:
             self.logger.warn('Please check the logging entries in {}'.format(logfile))
 
         return imported
@@ -216,10 +304,11 @@ class ImportService:
         # self.aws_s3_path = self.s3_mirror
         self.eperson = eperson
 
+        self._package_bucket = package_bucket
         self.log = '{}/log'.format(self._package_bucket.mount_point)
         self.batch_size = 0
 
-        self._package_bucket = package_bucket
+        self._message_service = self.__class__.build_email_service()
 
 class PackageBucket:
     def configure_logging(self):
