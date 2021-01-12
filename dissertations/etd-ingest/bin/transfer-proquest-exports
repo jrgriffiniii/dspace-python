@@ -13,17 +13,17 @@ echo $DEST_DIR
 
 export FILE_NAMES="lcd $DEST_DIR\n"
 while read file_entry; do
-  export FILE_FIELDS=`echo "$file_entry" | awk 'BEGIN { FS = " " } ; { print $6,$7,$8,$9 }'`
-  export UPLOAD_DATE=`echo $FILE_FIELDS | awk 'BEGIN { FS = " " } ; { print $1,$2 }'`
+  export FILE_FIELDS=`echo "$file_entry" | /usr/bin/env awk 'BEGIN { FS = " " } ; { print $6,$7,$8,$9 }'`
+  export UPLOAD_DATE=`echo $FILE_FIELDS | /usr/bin/env awk 'BEGIN { FS = " " } ; { print $1,$2 }'`
 
   if [[ $UPLOAD_DATE == $BATCH_DATE ]]; then
-    export FILE_NAME=`echo $FILE_FIELDS | awk 'BEGIN { FS = " " } ; { print $4 }'`
+    export FILE_NAME=`echo $FILE_FIELDS | /usr/bin/env awk 'BEGIN { FS = " " } ; { print $4 }'`
     echo "Copying $FILE_NAME..."
     FILE_NAMES+="mget $FILE_NAME\n"
   fi
-done < import_files.txt
+done < proquest_export_files.txt
 
 if [[ "$FILE_NAMES" != "" ]]; then
   echo -e "$FILE_NAMES"
-  echo -e "$FILE_NAMES" | sftp -P $PROQUEST_PROXY_PORT dspace@localhost
+  echo -e "$FILE_NAMES" | /usr/bin/env sftp -P $PROQUEST_PROXY_PORT dspace@localhost
 fi
