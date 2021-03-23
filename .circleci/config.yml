@@ -19,9 +19,6 @@ jobs:
           name: 'Install package dependencies using pipenv'
           command: |
             sudo pip install pipenv
-            if [[ $(python --version 2>&1) =~ 2\.7\. ]]; then
-              cp Pipfile2.7 Pipfile
-            fi
             pipenv lock --pre
             pipenv install --skip-lock
       - save_cache:
@@ -47,17 +44,12 @@ jobs:
           name: 'Install package dependencies using pipenv'
           command: |
             sudo pip install pipenv
-            if [[ $(python --version 2>&1) =~ 2\.7\. ]]; then
-              cp Pipfile2.7 Pipfile
-            fi
             pipenv lock --pre
             pipenv install --skip-lock
       - run:
           name: 'Lint the Python source files'
           command: |
-            if [[ $(python --version 2>&1) =~ 3\.8\. ]]; then
-              pipenv run black
-            fi
+            pipenv run black
       - save_cache:
           key: pip-packages-<< parameters.python_version >>-{{ .Branch }}-{{ checksum "Pipfile.lock" }}
           paths:
@@ -81,9 +73,6 @@ jobs:
           name: 'Install package dependencies using pipenv'
           command: |
             sudo pip install pipenv
-            if [[ $(python --version 2>&1) =~ 2\.7\. ]]; then
-              cp Pipfile2.7 Pipfile
-            fi
             pipenv lock --pre
             pipenv install --skip-lock
       - run:
@@ -115,9 +104,6 @@ jobs:
           name: 'Install package dependencies using pipenv'
           command: |
             sudo pip install pipenv
-            if [[ $(python --version 2>&1) =~ 2\.7\. ]]; then
-              cp Pipfile2.7 Pipfile
-            fi
             pipenv lock --pre
             pipenv install --skip-lock
       - run:
@@ -133,7 +119,7 @@ jobs:
     parameters:
       python_version:
         type: string
-        default: '2.7'
+        default: '3.8'
     working_directory: ~/dspace-python/thesiscentral-vireo/dataspace/python
     docker:
       - image: circleci/python:<< parameters.python_version >>-node-browsers-legacy
@@ -158,7 +144,7 @@ jobs:
     parameters:
       python_version:
         type: string
-        default: '2.7'
+        default: '3.8'
     working_directory: ~/dspace-python/thesiscentral-vireo/dataspace/python
     docker:
       - image: circleci/python:<< parameters.python_version >>-node-browsers-legacy
@@ -187,7 +173,7 @@ jobs:
     parameters:
       python_version:
         type: string
-        default: '2.7'
+        default: '3.8'
     working_directory: ~/dspace-python/thesiscentral-vireo/dataspace/python
     docker:
       - image: circleci/python:<< parameters.python_version >>-node-browsers-legacy
@@ -218,7 +204,7 @@ jobs:
     parameters:
       python_version:
         type: string
-        default: '2.7'
+        default: '3.8'
     working_directory: ~/dspace-python/thesiscentral-vireo/dataspace/python
     docker:
       - image: circleci/python:<< parameters.python_version >>-node-browsers-legacy
@@ -265,43 +251,23 @@ workflows:
           requires:
             - lint-python3.8
 
-      - build:
-          name: build-python2.7
-          python_version: '2.7'
-      - lint:
-          name: lint-python2.7
-          python_version: '2.7'
-          requires:
-            - build-python2.7
-      - doc:
-          name: doc-python2.7
-          python_version: '2.7'
-          requires:
-            - build-python2.7
-      - test:
-          name: test-python2.7
-          python_version: '2.7'
-          requires:
-            - lint-python2.7
-
   thesis_central:
     jobs:
       - build_thesis_central:
-          name: build-thesis-central2.7
-          python_version: '2.7'
+          name: build-thesis-central3.8
+          python_version: '3.8'
       - lint_thesis_central:
-          name: lint-thesis-central2.7
-          python_version: '2.7'
+          name: lint-thesis-central3.8
+          python_version: '3.8'
           requires:
-            - build-thesis-central2.7
+            - build-thesis-central3.8
       - doc_thesis_central:
-          name: doc-thesis-central2.7
-          python_version: '2.7'
+          name: doc-thesis-central3.8
+          python_version: '3.8'
           requires:
-            - build-thesis-central2.7
+            - build-thesis-central3.8
       - test_thesis_central:
-          name: test-thesis-central2.7
-          python_version: '2.7'
+          name: test-thesis-central3.8
+          python_version: '3.8'
           requires:
-            - lint-thesis-central2.7
-
+            - lint-thesis-central3.8
