@@ -163,7 +163,7 @@ jobs:
       - run:
           name: 'Lint the Python source files'
           command: |
-            pipenv run pylint
+            pipenv run pylint ./**/*py
       - save_cache:
           key: pip-packages-<< parameters.python_version >>-{{ .Branch }}-{{ checksum "Pipfile.lock" }}
           paths:

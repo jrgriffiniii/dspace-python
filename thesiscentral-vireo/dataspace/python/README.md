@@ -7,18 +7,12 @@ Python administration scripts for managing integration with [Thesis Central](htt
 [Importing Thesis Central Submissions](./IMPORT.md)
 
 ## Getting Started
-
-```
-% python --version
-Python 2.7.17
-```
-
 ### Installing Dependencies
 
 ```bash
 % pip install pipenv
-% pipenv shell --python 2.7.17
-% pipenv install
+% pipenv shell
+% pipenv install --skip-lock --dev
 ```
 
 ### Usage
@@ -36,21 +30,18 @@ Python 2.7.17
 ### Testing
 
 ```bash
-% pipenv install --dev
 % pipenv run pytest
 ```
 
 ### Linting
 
 ```bash
-% pipenv install --dev
 % pipenv run pylint ./**/*py
 ```
 
 ### Generate the Documentation
 
 ```bash
-% pipenv install --dev
 % pipenv run sphinx-build -b html -c ./ ./ _build
 % open _build/index.html
 ```
