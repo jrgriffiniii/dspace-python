@@ -1,6 +1,4 @@
-
 class Package:
-
     def __init__(self, path):
         self._path = path
 
@@ -10,8 +8,8 @@ class Package:
         self._pdf_document = PDFDocument()
         return self._pdf_document
 
-class PackageCollection:
 
+class PackageCollection:
     def __init__(self, path):
         self._path = path
 

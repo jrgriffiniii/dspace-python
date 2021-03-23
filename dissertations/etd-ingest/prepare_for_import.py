@@ -55,8 +55,7 @@ def do_dissertations(dir_name, unzip_dir):
                 print("#{} SUCCESS {}".format(i, os.path.basename(dname)))
             else:
                 nreject += 1
-                eprint("#{} ERROR: something went wrong with {} - moving to {}".format(i, dname if dname else z,
-                                                                                       reject_dir))
+                eprint("#{} ERROR: something went wrong with {} - moving to {}".format(i, dname if dname else z, reject_dir))
                 if dname:
                     to = "{}/{}".format(reject_dir, os.path.basename(dname))
                     os.rename(dname, to)
@@ -119,8 +118,7 @@ def generate_metadata_pu(i, dname, data_xml):
 def generate_contents(i, dname):
     docs = []
     for doc in os.listdir(dname):
-        if doc not in ['contents', 'dublin_core.xml', 'collections', 'metadata_pu.xml'] and not doc.endswith(
-                'DATA.xml'):
+        if (doc not in ['contents', 'dublin_core.xml', 'collections', 'metadata_pu.xml'] and not doc.endswith('DATA.xml')):
             doc_path = '{}/{}'.format(dname, doc)
             if os.path.isdir(doc_path):
                 for incl in os.listdir(doc_path):

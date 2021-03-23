@@ -10,6 +10,7 @@ import sys
 
 from ..vireo import VireoSheet
 
+
 class ArgParser(argparse.ArgumentParser):
     @staticmethod
     def create():
@@ -18,22 +19,32 @@ read thesis submission info from file given in --thesis option
 
 based on a submission status,  move submission aip directoies into sub-directories
 """
-        loglevels = ['CRITICAL', 'ERROR', 'WARN', 'INFO', 'DEBUG', 'NOTSET']
+        loglevels = ["CRITICAL", "ERROR", "WARN", "INFO", "DEBUG", "NOTSET"]
 
-        parser = ArgParser(description=description, formatter_class=argparse.RawTextHelpFormatter)
-        parser.add_argument("--thesis", "-t", required=True, help="excel export file from vireo")
-        parser.add_argument("--aips",  required=True, help="directory with DSPace AIPS")
-        parser.add_argument("--loglevel", "-l", choices=loglevels,  default=logging.INFO, help="log level  - default: ERROR")
-        return parser;
+        parser = ArgParser(
+            description=description, formatter_class=argparse.RawTextHelpFormatter
+        )
+        parser.add_argument(
+            "--thesis", "-t", required=True, help="excel export file from vireo"
+        )
+        parser.add_argument("--aips", required=True, help="directory with DSPace AIPS")
+        parser.add_argument(
+            "--loglevel",
+            "-l",
+            choices=loglevels,
+            default=logging.INFO,
+            help="log level  - default: ERROR",
+        )
+        return parser
 
     def parse_args(self):
-        args= argparse.ArgumentParser.parse_args(self)
+        args = argparse.ArgumentParser.parse_args(self)
         if not os.path.isdir(args.aips):
             raise Exception("%s is not a directory" % args.aips)
         return args
 
-class SortByStatus():
 
+class SortByStatus:
     @staticmethod
     def build_logger():
         logger = logging.getLogger()
@@ -69,12 +80,12 @@ class SortByStatus():
             sub_id = int(id_cell_value)
 
             # This uses the "Status" value in the new subdirectory name
-            status_value = vals[status_idx].replace(' ', '-')
+            status_value = vals[status_idx].replace(" ", "-")
 
             multi_author = vals[multi_author_idx]
 
-            if (multi_author.upper() == "YES"):
-                sub_dir_name = os.path.join(self.aip_dir, 'Multi-Author', status_value)
+            if multi_author.upper() == "YES":
+                sub_dir_name = os.path.join(self.aip_dir, "Multi-Author", status_value)
             else:
                 sub_dir_name = os.path.join(self.aip_dir, status_value)
 
@@ -82,7 +93,9 @@ class SortByStatus():
                 os.makedirs(sub_dir_name)
 
             submission_dir_name = "submission_{}".format(sub_id)
-            vireo_export_dir = os.path.join(self.aip_dir, 'DSpaceSimpleArchive', submission_dir_name)
+            vireo_export_dir = os.path.join(
+                self.aip_dir, "DSpaceSimpleArchive", submission_dir_name
+            )
             dspace_package_dir = os.path.join(sub_dir_name, submission_dir_name)
 
             logger.info("Processing {} for {}...".format(sub_id, vireo_export_dir))
@@ -91,6 +104,7 @@ class SortByStatus():
                 shutil.move(vireo_export_dir, dspace_package_dir)
 
             logger.info("Processed {} into {}...".format(sub_id, dspace_package_dir))
+
 
 def main():
     try:
@@ -112,6 +126,7 @@ def main():
 
         logging.debug(traceback.format_exc())
         sys.exit(1)
+
 
 if __name__ == "__main__":
     main()
