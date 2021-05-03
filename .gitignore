@@ -1,4 +1,8 @@
-
 thesiscentral-vireo/dataspace/python/export
 thesiscentral-vireo/dataspace/python/export-master
 build/
+build/doctrees
+build/html
+
+pppl/s3
+!pppl/s3/.keep
