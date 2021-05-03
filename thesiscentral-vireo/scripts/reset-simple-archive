@@ -1,0 +1,15 @@
+#!/bin/tcsh -e
+
+rm "export/$department/enhanceAips.trace"
+rm "export/$department/$department.tgz"
+rm -fr "export/$department/DSpaceSimpleArchive"
+rm -fr "export/$department/Approved"
+
+if ( -d "export/$department/Multi-Author" ) then
+  rm -fr "export/$department/Multi-Author"
+endif
+
+cd "export/$department"
+unzip DSpaceSimpleArchive.zip
+cd -
+

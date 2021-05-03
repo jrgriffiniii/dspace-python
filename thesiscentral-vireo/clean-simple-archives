@@ -1,0 +1,4 @@
+#!/bin/tcsh -e
+
+rm -fr "./export/$department/Approved"
+rm -fr "./export/$department/DSpaceSimpleArchive"

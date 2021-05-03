@@ -1,0 +1,29 @@
+#!/bin/tcsh -e
+
+set SCRATCH_DIR = /var/scratch
+set THESIS_CENTRAL_DOC_ROOT = /dspace/www/thesis_central
+
+set dept = "$department"
+
+set dept = `basename "$dept"`
+set dept = "$dept"
+echo $dept
+
+cd  $THESIS_CENTRAL_DOC_ROOT
+mkdir -p "$dept"
+set DEPT_DIR_PATH = "$THESIS_CENTRAL_DOC_ROOT/$dept"
+cd "$dept"
+
+echo "extracting $SCRATCH_DIR/thesis-central/$dept.tgz into `pwd`"
+
+tar xfz "$SCRATCH_DIR/thesis-central/$dept.tgz"
+
+# Ensure that all directories can be opened
+find . -type d -exec chmod o+rx {} \;
+
+# Ensure that all files can be opened
+find . -type f -exec chmod o+r {} \;
+
+find "$DEPT_DIR_PATH/" -name 'submission_*' -exec chmod o+rwx {} \;
+find "$DEPT_DIR_PATH/" -name 'submission_*' -exec chmod -R o+r {} \;
+

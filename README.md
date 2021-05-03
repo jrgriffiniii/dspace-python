@@ -5,10 +5,9 @@
 Python scripts for DSpace administration.
 
 ## Getting Started
+### Prerequisites
 
-## Prerequisites
-
-- python 3.8.3
+- python 3.8.8
 - pip
 - pipenv
 - make
@@ -16,6 +15,7 @@ Python scripts for DSpace administration.
 ### Installing `pipenv`
 
 ```
+pyenv local 3.8.8
 pip install pipenv
 ```
 
@@ -24,8 +24,12 @@ pip install pipenv
 ```
 pipenv shell
 pipenv lock --pre
-pipenv install
+pipenv install --dev
 ```
+
+### Usage
+
+- [Thesis Central and Senior Theses Administration](./thesiscentral-vireo/dataspace/python/README.md)
 
 ## Development
 

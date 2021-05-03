@@ -1,0 +1,11 @@
+#!/bin/tcsh
+
+set HERE = `dirname $0`
+set HERE = `realpath  $HERE`
+
+cd Multi-Author/
+echo cd `pwd`
+foreach dir (Approved/*/Approved/submission_*)
+  echo $HERE/combine_one "'$dir'"
+  echo "echo ''"
+end

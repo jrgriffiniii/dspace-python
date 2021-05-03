@@ -24,6 +24,7 @@ INTERNAL = 'INTERNAL'
 s3_file_batch_size = 0
 _nerror = 0
 
+
 def _error(msg):
     """
     Log a message for the error log
@@ -36,6 +37,7 @@ def _error(msg):
 
     return None
 
+
 def _info(pre, msg):
     """
     Log a message for the info log
@@ -45,6 +47,7 @@ def _info(pre, msg):
     logging.info('{}: {}'.format(pre, msg))
 
     return None
+
 
 def _debug(pre, msg):
     """
@@ -78,10 +81,12 @@ def _systm(s3_file, cmd, logfile):
     rc = os.system('({}) >> {} 2>&1'.format(cmd, logfile))
 
     if 0 != rc:
-        msg = '{} rc={}'.format(cmd, rc)
+        msg = "{} rc={}".format(cmd, rc)
         _error(msg)
-        with open(logfile,"a+") as f: f.write('ERROR\n')
+        with open(logfile, "a+") as f:
+            f.write("ERROR\n")
     return rc
+
 
 def _unpack(s3_dir, s3_file, logfile):
     """
@@ -115,6 +120,7 @@ def _unpack(s3_dir, s3_file, logfile):
         return _error('could not create {}'.format(dirname))
 
     cmd = 'cd {}; tar xvfz {}/{}; cd -'.format(item_dirname, s3_dir, s3_file)
+
     rc = _systm(s3_file, cmd, logfile)
     if 0 == rc:
         return Path(dirname)
@@ -139,6 +145,7 @@ def _import(s3_mirror, log, submitter, s3_file, service):
         Importer service
     """
 
+
     success = False
     unpacked_dir = None
     s3_file_path = Path(s3_file)
@@ -154,7 +161,6 @@ def _import(s3_mirror, log, submitter, s3_file, service):
 
         if decompressed_dir_path.exists():
             cmd = service._dataspace_import_cmd(decompressed_dir_path, mapfile_path)
-
             rc = _systm(s3_file, cmd, logfile)
             success = rc == 0 and service.isarchived(s3_file_path)
     except:
@@ -301,3 +307,4 @@ if __name__=="__main__":
     else:
         _error('failed to import {} packages'.format(s3_file_batch_size))
         sys.exit(exit_code)
+

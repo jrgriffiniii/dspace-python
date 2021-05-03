@@ -1,0 +1,35 @@
+#!/bin/tcsh
+cd /dspace/www/thesis_central/Multi-Author/
+set HERE = `pwd`
+foreach dir (Approved/*/Approved/submission_*)
+  echo $HERE/$dir
+
+  echo "PRIMARY DOC"
+  fgrep primary $dir/contents
+  echo ""
+  ls $dir/*pdf
+  echo ""
+
+  echo "#CO-AUTHOR SUBMISSIONS"
+  ls -d $dir/submission_*
+  echo ""
+
+  echo "AUTHOR"
+  echo -n "#authors @ dublin-core: "
+  fgrep author $dir/dublin_core.xml | fgrep -v '<!--' | wc -l
+  echo -n "#authors @ metadata_pu: "
+  fgrep authorid $dir/metadata_pu.xml   | wc -l
+  echo ""
+
+  echo "*** certificates "
+  echo "dublin-core.xml"
+  fgrep certificate  $dir/metadata_pu.xml
+  echo "submissions_*/dublin-core.xml"
+  fgrep certificate  $dir/submission_*/metadata_pu.xml
+
+  echo -n "return to move to next"
+  $<
+  echo ""
+  echo ""
+
+end
