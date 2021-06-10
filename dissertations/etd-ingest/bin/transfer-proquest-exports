@@ -25,5 +25,5 @@ done < proquest_export_files.txt
 
 if [[ "$FILE_NAMES" != "" ]]; then
   echo -e "$FILE_NAMES"
-  echo -e "$FILE_NAMES" | /usr/bin/env sftp -P $PROQUEST_PROXY_PORT dspace@localhost
+  echo -e "$FILE_NAMES" | /usr/bin/env sftp pulsys@proquestdrop.pulcloud.io:/pultheses/proquest
 fi
